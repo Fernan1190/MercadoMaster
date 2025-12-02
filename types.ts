@@ -8,6 +8,7 @@ export interface UserStats {
   hearts: number; // Current lives (max 5)
   maxHearts: number;
   portfolio: { [symbol: string]: number };
+  transactions: Transaction[];
   masterCoins: number; // Gamified currency
   completedLessons: string[]; // Keep for legacy compatibility or achievements
   levelRatings: { [lessonId: string]: 1 | 2 | 3 }; // NEW: Stars per level (1-3)
@@ -215,4 +216,13 @@ export interface CandleData {
   high: number;
   low: number;
   close: number;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'buy' | 'sell';
+  symbol: string;
+  amount: number;
+  price: number;
+  timestamp: string; // Guardaremos la fecha como string legible
 }

@@ -12,38 +12,62 @@ export const TradingTerminal: React.FC = () => {
   const [price, setPrice] = useState(65000);
   const [tradeAmount, setTradeAmount] = useState('');
 
-  // Simulación del Mercado en Tiempo Real (Local)
+  // Simulación del Mercado en Tiempo Real
   useEffect(() => {
-    // 1. Cargar historial inicial
     const initialData = generateHistory(price, 50);
     setData(initialData);
 
-    // 2. Loop de actualización (Ticker)
     const interval = setInterval(() => {
       setData(prev => {
         const lastCandle = prev[prev.length - 1];
         const newCandle = generateNextCandle(lastCandle.close);
-        setPrice(newCandle.close); // Actualizar precio actual visual
-        
-        // Mantener solo las últimas 50 velas para rendimiento
-        const newData = [...prev.slice(1), newCandle];
-        return newData;
+        setPrice(newCandle.close);
+        return [...prev.slice(1), newCandle];
       });
-    }, 2000); // Actualiza cada 2 segundos
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [activeSymbol]); // Reinicia si cambias de moneda
+  }, [activeSymbol]); 
 
+  // --- LÓGICA DE TRADING MEJORADA ---
   const handleTrade = (type: 'buy' | 'sell') => {
     const amount = parseFloat(tradeAmount);
-    if (!amount || amount <= 0) return;
+    
+    // 1. Validación básica
+    if (!amount || amount <= 0) {
+      alert("⚠️ Por favor, introduce una cantidad válida mayor a 0.");
+      return;
+    }
+
+    let success = false;
 
     if (type === 'buy') {
-      actions.buyAsset(activeSymbol, amount, price);
+      // 2. Intentar Comprar
+      success = actions.buyAsset(activeSymbol, amount, price);
+      
+      if (!success) {
+        // Feedback si falla
+        const cost = amount * price;
+        alert(`🚫 FONDOS INSUFICIENTES\n\nNecesitas: $${cost.toLocaleString()}\nTienes: $${stats.balance.toLocaleString()}\n\nPrueba con una cantidad menor (ej: 0.01)`);
+      } else {
+        // Feedback si funciona (opcional, visualmente se ve en el balance)
+        // alert(`✅ Compraste ${amount} ${activeSymbol}`);
+      }
+
     } else {
-      actions.sellAsset(activeSymbol, amount, price);
+      // 3. Intentar Vender
+      success = actions.sellAsset(activeSymbol, amount, price);
+      
+      if (!success) {
+        // Feedback si falla
+        alert(`🚫 ERROR DE VENTA\n\nNo tienes suficiente ${activeSymbol} en tu cartera para vender esa cantidad.`);
+      }
     }
-    setTradeAmount('');
+
+    // 4. Limpiar input solo si hubo éxito
+    if (success) {
+      setTradeAmount('');
+    }
   };
 
   // Calcular valor actual de esta moneda en posesión
@@ -53,7 +77,7 @@ export const TradingTerminal: React.FC = () => {
   const isUp = data.length > 1 && data[data.length - 1].close > data[data.length - 2].close;
 
   return (
-    <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-2xl relative overflow-hidden">
+    <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-2xl relative overflow-hidden h-full flex flex-col">
       {/* Header del Terminal */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
@@ -87,8 +111,8 @@ export const TradingTerminal: React.FC = () => {
         </div>
       </div>
 
-      {/* Gráfico (Area Chart para que se vea bonito) */}
-      <div className="h-64 w-full mb-6 relative">
+      {/* Gráfico */}
+      <div className="flex-1 w-full mb-6 relative min-h-[200px]">
          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
                <defs>
@@ -136,7 +160,7 @@ export const TradingTerminal: React.FC = () => {
                <DollarSign className="absolute left-3 top-3 text-slate-500" size={18}/>
                <input 
                   type="number" 
-                  placeholder="Cantidad a operar..." 
+                  placeholder="Cantidad (ej: 0.1)" 
                   value={tradeAmount}
                   onChange={(e) => setTradeAmount(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
@@ -145,13 +169,13 @@ export const TradingTerminal: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
                <button 
                   onClick={() => handleTrade('buy')}
-                  className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+                  className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg"
                >
                   <TrendingUp size={18}/> COMPRAR
                </button>
                <button 
                   onClick={() => handleTrade('sell')}
-                  className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg"
                >
                   <TrendingDown size={18}/> VENDER
                </button>

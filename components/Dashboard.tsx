@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useGame } from '../context/GameContext'; // Importamos el hook
+import { useGame } from '../context/GameContext'; 
 import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
-import { TradingTerminal } from './TradingTerminal'; // Importa el nuevo componente
+import { TradingTerminal } from './TradingTerminal';
+import { PortfolioChart } from './PortfolioChart'; // NUEVO
+import { TransactionList } from './TransactionList'; // NUEVO
 
 interface DashboardProps {
   setView: (view: string) => void;
@@ -37,7 +39,6 @@ const ECONOMIC_EVENTS = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  // CONEXIÓN DIRECTA CON EL CEREBRO DE LA APP
   const { stats, actions } = useGame();
   const { mineCoin, stakeCoins, unstakeCoins, toggleTheme, updateNotes } = actions;
 
@@ -116,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
         )}
 
-        {/* Continue Learning (Large Card) */}
+        {/* Continue Learning */}
         <div onClick={() => setView('learn')} className={`${zenMode ? 'md:col-span-12 h-96' : 'md:col-span-4 row-span-2'} bg-gradient-to-br from-green-600 to-emerald-800 rounded-[2.5rem] p-8 relative overflow-hidden group cursor-pointer shadow-2xl transition-all hover:scale-[1.01] flex flex-col justify-between`}>
             <div className="absolute top-0 right-0 p-20 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors"></div>
             <div className="relative z-10">
@@ -175,29 +176,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
            <p className="text-slate-400 text-sm leading-relaxed">{wordOfDay.def}</p>
         </div>
 
-        {/* Quick Notes */}
-        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col">
+        {/* TRADING SECTION */}
+        <div className="md:col-span-8 h-[500px]">
+            <TradingTerminal />
+        </div>
+        
+        <div className="md:col-span-4 h-[500px]">
+            <PortfolioChart />
+        </div>
+
+        {/* UTILITIES ROW */}
+        <div className="md:col-span-4 h-80">
+            <TransactionList />
+        </div>
+
+        <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col">
            <h3 className="text-white font-bold flex items-center gap-2 mb-3"><Edit3 size={20} className="text-slate-400"/> Notas Rápidas</h3>
            <textarea 
-              className="w-full h-24 bg-slate-800/50 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-500 resize-none"
-              placeholder="Ideas de trading..."
+              className="w-full flex-1 bg-slate-800/50 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-500 resize-none"
+              placeholder="Estrategia: Comprar BTC cuando baje de 60k..."
               value={stats.quickNotes}
               onChange={(e) => updateNotes(e.target.value)}
            ></textarea>
         </div>
 
         {/* Mining Rig */}
-        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
+        <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-white font-bold flex items-center gap-2"><Pickaxe size={20} className="text-yellow-500"/> Minería BTC</h3>
                <span className="text-xs text-slate-500 font-mono">{stats.minedCoins} Mined</span>
             </div>
             <button 
                onClick={mineCoin}
-               className="w-full py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 group-hover:border-yellow-500/50 shadow-lg"
+               className="w-full h-48 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group-hover:border-yellow-500/50 shadow-lg"
             >
-               <div className="p-2 bg-yellow-500/20 rounded-full text-yellow-500 animate-pulse"><Zap size={20} fill="currentColor"/></div>
-               <span className="font-bold text-white">Minar Bloque (+1 Coin)</span>
+               <div className="p-4 bg-yellow-500/20 rounded-full text-yellow-500 animate-pulse"><Zap size={32} fill="currentColor"/></div>
+               <span className="font-bold text-white text-lg">Minar Bloque</span>
             </button>
         </div>
         
@@ -215,18 +229,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                <button onClick={stakeCoins} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold py-2 rounded-lg border border-emerald-600/30">Deposit</button>
                <button onClick={unstakeCoins} className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg">Withdraw</button>
             </div>
-        </div>
-
-        {/* Balance Card */}
-        <div className="md:col-span-8">
-            <TradingTerminal />
-         </div>
-
-        {/* Quote of the Day */}
-        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col justify-center text-center">
-            <Quote size={32} className="text-indigo-500 mx-auto mb-4 opacity-50"/>
-            <p className="text-white font-medium italic mb-2">"{quote.text}"</p>
-            <p className="text-xs text-slate-500 font-bold uppercase">- {quote.author}</p>
         </div>
 
         {/* Daily Quests List */}

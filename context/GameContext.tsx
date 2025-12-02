@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserStats, PathId, DailyQuest } from '../types';
+import { UserStats, PathId, DailyQuest, Transaction } from '../types';
+import { INITIAL_PRICES } from '../services/marketSimulator';
 
-// Estado Inicial (El mismo que tenías)
+// ... (INITIAL_QUESTS y INITIAL_STATS se mantienen igual que antes) ...
 const INITIAL_QUESTS: DailyQuest[] = [
   { id: 'q1', text: 'Gana 50 XP', target: 50, progress: 0, completed: false, reward: 50, type: 'xp' },
   { id: 'q2', text: 'Completa 2 Lecciones', target: 2, progress: 0, completed: false, reward: 100, type: 'lessons' },
@@ -15,7 +16,8 @@ const INITIAL_STATS: UserStats = {
   streak: 1,
   balance: 10000,
   hearts: 5,
-  portfolio: {},
+  portfolio: {}, 
+  transactions: [],
   maxHearts: 5,
   masterCoins: 350, 
   completedLessons: [],
@@ -41,9 +43,12 @@ const INITIAL_STATS: UserStats = {
   openedChests: []
 };
 
-// Definimos qué funciones y datos serán visibles para toda la app
 interface GameContextType {
   stats: UserStats;
+  market: {
+    prices: { [symbol: string]: number };
+    history: { [symbol: string]: any[] }; 
+  };
   actions: {
     updateStats: (xpGained: number, pathId?: PathId, levelIncrement?: number, perfectRun?: boolean) => void;
     deductHeart: () => void;
@@ -57,68 +62,58 @@ interface GameContextType {
     toggleTheme: () => void;
     updateNotes: (notes: string) => void;
     getThemeClass: () => string;
-    buyAsset: (symbol: string, amount: number, price: number) => void;
-    sellAsset: (symbol: string, amount: number, price: number) => void;
-  };
-  market: {
-    prices: { [symbol: string]: number };
-    history: { [symbol: string]: any[] }; // CandleData[]
+    // CAMBIO IMPORTANTE AQUÍ: Ahora devuelven boolean
+    buyAsset: (symbol: string, amount: number, price: number) => boolean;
+    sellAsset: (symbol: string, amount: number, price: number) => boolean;
   };
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
-  // 1. Inicializar estado (Buscando en localStorage primero)
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('mercadoMasterStats');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (!parsed.portfolio) parsed.portfolio = {};
+        if (!parsed.transactions) parsed.transactions = [];
+        return parsed;
       } catch (e) {
-        console.error("Error cargando partida guardada", e);
+        console.error("Error cargando partida", e);
         return INITIAL_STATS;
       }
     }
     return INITIAL_STATS;
   });
 
-  // 2. Persistencia Automática: Cada vez que stats cambia, guardamos
+  const [marketPrices, setMarketPrices] = useState(INITIAL_PRICES);
+
   useEffect(() => {
     localStorage.setItem('mercadoMasterStats', JSON.stringify(stats));
   }, [stats]);
 
-  // Lógica de Niveles (Efecto secundario)
   useEffect(() => {
     const newLevel = Math.floor(stats.xp / 500) + 1;
     if (newLevel > stats.level) {
       setStats(prev => ({ ...prev, level: newLevel }));
-      // Aquí podrías añadir un sonido de level up global si quisieras
     }
   }, [stats.xp, stats.level]);
 
-  // --- ACCIONES (La lógica extraída de App.tsx) ---
-
+  // ... (Funciones de updateStats, deductHeart, etc. se mantienen igual) ...
   const updateStats = (xpGained: number, pathId?: PathId, levelIncrement: number = 0, perfectRun: boolean = false) => {
     setStats(prev => {
       const newPathProgress = { ...prev.pathProgress };
-      if (pathId) {
-         newPathProgress[pathId] = (newPathProgress[pathId] || 0) + levelIncrement;
-      }
+      if (pathId) newPathProgress[pathId] = (newPathProgress[pathId] || 0) + levelIncrement;
       
       const coinsGained = Math.floor(xpGained / 2);
-      
-      // Update Quests
       const newQuests = prev.dailyQuests.map(q => {
         if (q.completed) return q;
         let newProgress = q.progress;
-        
         if (q.type === 'xp') newProgress += xpGained;
         if (q.type === 'lessons' && levelIncrement > 0) newProgress += 1;
         if (q.type === 'perfect' && perfectRun) newProgress += 1;
-
-        const isCompleted = newProgress >= q.target;
-        return { ...q, progress: newProgress, completed: isCompleted };
+        return { ...q, progress: newProgress, completed: newProgress >= q.target };
       });
 
       const questRewards = newQuests
@@ -135,17 +130,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const deductHeart = () => {
-    setStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) }));
-  };
-
+  const deductHeart = () => setStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) }));
+  
   const buyHearts = () => {
     if (stats.masterCoins >= 300) {
-      setStats(prev => ({
-        ...prev,
-        masterCoins: prev.masterCoins - 300,
-        hearts: prev.maxHearts
-      }));
+      setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - 300, hearts: prev.maxHearts }));
       return true;
     }
     return false;
@@ -153,64 +142,33 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
   const useItem = (type: 'hint5050' | 'timeFreeze' | 'skip') => {
     if (stats.inventory[type] > 0) {
-      setStats(prev => ({
-        ...prev,
-        inventory: { ...prev.inventory, [type]: prev.inventory[type] - 1 }
-      }));
+      setStats(prev => ({ ...prev, inventory: { ...prev.inventory, [type]: prev.inventory[type] - 1 } }));
       return true;
     }
-    const costs = { hint5050: 50, timeFreeze: 100, skip: 150 };
-    if (stats.masterCoins >= costs[type]) {
-      setStats(prev => ({
-        ...prev,
-        masterCoins: prev.masterCoins - costs[type]
-      }));
+    if (stats.masterCoins >= (type === 'hint5050' ? 50 : type === 'timeFreeze' ? 100 : 150)) {
+      setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - (type === 'hint5050' ? 50 : type === 'timeFreeze' ? 100 : 150) }));
       return true;
     }
     return false;
   };
 
   const addBookmark = (term: string) => {
-    if (!stats.bookmarks.includes(term)) {
-      setStats(prev => ({ ...prev, bookmarks: [...prev.bookmarks, term] }));
-    }
+    if (!stats.bookmarks.includes(term)) setStats(prev => ({ ...prev, bookmarks: [...prev.bookmarks, term] }));
   };
 
-  const mineCoin = () => {
-     setStats(prev => ({
-        ...prev,
-        masterCoins: prev.masterCoins + 1,
-        minedCoins: (prev.minedCoins || 0) + 1
-     }));
-  };
-
+  const mineCoin = () => setStats(prev => ({ ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 }));
+  
   const stakeCoins = () => {
-     if (stats.masterCoins >= 100) {
-        setStats(prev => ({
-           ...prev,
-           masterCoins: prev.masterCoins - 100,
-           stakedCoins: (prev.stakedCoins || 0) + 100
-        }));
-     }
+     if (stats.masterCoins >= 100) setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - 100, stakedCoins: (prev.stakedCoins || 0) + 100 }));
   };
 
   const unstakeCoins = () => {
-     if (stats.stakedCoins > 0) {
-        setStats(prev => ({
-           ...prev,
-           masterCoins: prev.masterCoins + prev.stakedCoins,
-           stakedCoins: 0
-        }));
-     }
+     if (stats.stakedCoins > 0) setStats(prev => ({ ...prev, masterCoins: prev.masterCoins + prev.stakedCoins, stakedCoins: 0 }));
   };
   
   const openChest = (chestId: string) => {
     if (stats.openedChests.includes(chestId)) return;
-    setStats(prev => ({
-        ...prev,
-        masterCoins: prev.masterCoins + 20,
-        openedChests: [...prev.openedChests, chestId]
-    }));
+    setStats(prev => ({ ...prev, masterCoins: prev.masterCoins + 20, openedChests: [...prev.openedChests, chestId] }));
   };
 
   const toggleTheme = () => {
@@ -219,9 +177,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
      setStats(prev => ({ ...prev, theme: themes[nextIndex] }));
   };
   
-  const updateNotes = (notes: string) => {
-     setStats(prev => ({ ...prev, quickNotes: notes }));
-  };
+  const updateNotes = (notes: string) => setStats(prev => ({ ...prev, quickNotes: notes }));
 
   const getThemeClass = () => {
      if (stats.theme === 'cyberpunk') return 'bg-slate-950 font-mono text-cyan-400 selection:bg-pink-500';
@@ -229,13 +185,73 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
      return 'bg-slate-950 text-slate-100 font-sans selection:bg-green-500 selection:text-slate-900';
   };
 
+  // --- TRADING LOGIC ---
+
+  const buyAsset = (symbol: string, amount: number, currentPrice: number) => {
+    const totalCost = amount * currentPrice;
+    if (stats.balance >= totalCost) {
+      const newTx: Transaction = {
+        id: Date.now().toString(),
+        type: 'buy',
+        symbol,
+        amount,
+        price: currentPrice,
+        timestamp: new Date().toLocaleString()
+      };
+
+      setStats(prev => ({
+        ...prev,
+        balance: prev.balance - totalCost,
+        portfolio: {
+          ...prev.portfolio,
+          [symbol]: (prev.portfolio[symbol] || 0) + amount
+        },
+        transactions: [newTx, ...(prev.transactions || [])]
+      }));
+      return true; // ÉXITO
+    }
+    return false; // FALLO (Fondos insuficientes)
+  };
+
+  const sellAsset = (symbol: string, amount: number, currentPrice: number) => {
+    const currentQty = stats.portfolio[symbol] || 0;
+    if (currentQty >= amount) {
+      const totalGain = amount * currentPrice;
+      const newTx: Transaction = {
+        id: Date.now().toString(),
+        type: 'sell',
+        symbol,
+        amount,
+        price: currentPrice,
+        timestamp: new Date().toLocaleString()
+      };
+
+      setStats(prev => ({
+        ...prev,
+        balance: prev.balance + totalGain,
+        portfolio: {
+          ...prev.portfolio,
+          [symbol]: currentQty - amount
+        },
+        transactions: [newTx, ...(prev.transactions || [])]
+      }));
+      return true; // ÉXITO
+    }
+    return false; // FALLO (No tienes activo)
+  };
+
   return (
     <GameContext.Provider value={{ 
       stats, 
+      market: {
+        prices: marketPrices,
+        history: {} 
+      },
       actions: { 
         updateStats, deductHeart, buyHearts, useItem, addBookmark, 
         mineCoin, stakeCoins, unstakeCoins, openChest, toggleTheme, 
-        updateNotes, getThemeClass 
+        updateNotes, getThemeClass,
+        buyAsset, sellAsset
       } 
     }}>
       {children}
@@ -243,7 +259,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook personalizado para usar el contexto fácilmente
 export const useGame = () => {
   const context = useContext(GameContext);
   if (!context) {
@@ -251,42 +266,3 @@ export const useGame = () => {
   }
   return context;
 };
-
-// ESTADO DEL MERCADO (Volátil, no se guarda en localStorage)
-  const [marketPrices, setMarketPrices] = useState(INITIAL_PRICES as any);
-  // Aquí podrías añadir lógica para actualizar precios cada X segundos usando marketSimulator
-
-  // --- NUEVAS ACCIONES DE TRADING ---
-
-  const buyAsset = (symbol: string, amount: number, currentPrice: number) => {
-    const totalCost = amount * currentPrice;
-    if (stats.balance >= totalCost) {
-      setStats(prev => ({
-        ...prev,
-        balance: prev.balance - totalCost,
-        portfolio: {
-          ...prev.portfolio,
-          [symbol]: (prev.portfolio[symbol] || 0) + amount
-        }
-      }));
-      return true; // Éxito
-    }
-    return false; // Fondos insuficientes
-  };
-
-  const sellAsset = (symbol: string, amount: number, currentPrice: number) => {
-    const currentQty = stats.portfolio[symbol] || 0;
-    if (currentQty >= amount) {
-      const totalGain = amount * currentPrice;
-      setStats(prev => ({
-        ...prev,
-        balance: prev.balance + totalGain,
-        portfolio: {
-          ...prev.portfolio,
-          [symbol]: currentQty - amount
-        }
-      }));
-      return true;
-    }
-    return false;
-  };
