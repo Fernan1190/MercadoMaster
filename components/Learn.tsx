@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useGame } from '../context/GameContext'; // CONTEXTO IMPORTADO
+import { useGame } from '../context/GameContext'; 
 import { XCircle, Timer, Heart } from 'lucide-react';
 import { PathId, LessonContent, Unit, LearningPath, GameMode } from '../types';
 import { getLesson } from '../services/contentService';
@@ -8,7 +8,6 @@ import { LessonMap } from './learn/LessonMap';
 import { LessonTheory } from './learn/LessonTheory';
 import { LessonOverlays } from './learn/LessonOverlays';
 
-// Definición de tus Rutas de Aprendizaje
 const PATHS: Record<PathId, LearningPath> = {
   [PathId.STOCKS]: {
     id: PathId.STOCKS,
@@ -43,18 +42,15 @@ const PATHS: Record<PathId, LearningPath> = {
 type LessonPhase = 'intro' | 'theory' | 'quiz' | 'outro';
 
 export const Learn: React.FC = () => {
-  // --- USANDO EL CONTEXTO EN LUGAR DE PROPS ---
   const { stats, actions } = useGame();
-  const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest } = actions;
+  const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest, playSound } = actions; // AÑADIDO playSound
 
-  // --- ESTADO LOCAL (Igual que antes) ---
   const [selectedPathId, setSelectedPathId] = useState<PathId | null>(null);
   const [activeLesson, setActiveLesson] = useState<LessonContent | null>(null);
   const [phase, setPhase] = useState<LessonPhase>('intro');
   const [currentUnit, setCurrentUnit] = useState<Unit | null>(null);
   const [gameMode, setGameMode] = useState<GameMode>('standard');
   
-  // Estados de Carga y UI
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -64,7 +60,6 @@ export const Learn: React.FC = () => {
   const [lootBoxOpen, setLootBoxOpen] = useState(false);
   const [terminalMode, setTerminalMode] = useState(false);
 
-  // Estados del Quiz
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -74,21 +69,17 @@ export const Learn: React.FC = () => {
   const [shake, setShake] = useState(false);
   const [explanationOverride, setExplanationOverride] = useState<string | null>(null);
 
-  // Estados de Minijuegos
   const [riskSliderValue, setRiskSliderValue] = useState(50);
   const [portfolioState, setPortfolioState] = useState<{ [key: string]: number }>({});
   const [sentimentState, setSentimentState] = useState<{ index: number; correctCount: number; answers: boolean[] }>({ index: 0, correctCount: 0, answers: [] });
   
-  // Audio
   const [isMuted, setIsMuted] = useState(false);
   useEffect(() => { (window as any).isMuted = isMuted; }, [isMuted]);
 
-  // Boss / Timer
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
 
-  // Matching/Ordering State
   const [matchingState, setMatchingState] = useState<{
     selectedId: string | null;
     matchedIds: string[];
@@ -100,47 +91,10 @@ export const Learn: React.FC = () => {
     userOrder: string[];
   }>({ pool: [], userOrder: [] });
 
-  // Sonidos (Helper)
-  const playSound = (type: 'success' | 'fail' | 'pop' | 'levelUp' | 'chest' | 'swipe' | 'process') => {
-    if ((window as any).isMuted) return;
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-  
-    const t = ctx.currentTime;
-    if (type === 'success') {
-      osc.frequency.setValueAtTime(600, t);
-      osc.frequency.exponentialRampToValueAtTime(1000, t + 0.1);
-      gain.gain.setValueAtTime(0.1, t);
-      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-    } else if (type === 'fail') {
-      osc.frequency.setValueAtTime(300, t);
-      osc.frequency.exponentialRampToValueAtTime(100, t + 0.3);
-      osc.type = 'sawtooth';
-      gain.gain.setValueAtTime(0.2, t);
-      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-    } else if (type === 'process') {
-      osc.frequency.setValueAtTime(200, t);
-      osc.frequency.linearRampToValueAtTime(400, t + 0.5);
-      gain.gain.setValueAtTime(0.02, t);
-      gain.gain.linearRampToValueAtTime(0, t + 0.5);
-    } else {
-       osc.frequency.setValueAtTime(800, t);
-       gain.gain.setValueAtTime(0.05, t);
-       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-    }
-
-    osc.start();
-    osc.stop(t + (type === 'process' ? 0.5 : 0.3));
-  };
+  // ¡HEMOS BORRADO playSound() LOCAL PORQUE YA USAMOS EL DE CONTEXTO!
   
   const speakText = (text: string) => { if (isMuted) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; window.speechSynthesis.speak(u); };
 
-  // Timer Effect
   useEffect(() => {
     let timer: any;
     if (timerActive && timeLeft > 0) {
@@ -157,7 +111,6 @@ export const Learn: React.FC = () => {
     return () => clearInterval(timer);
   }, [timeLeft, timerActive, gameMode]);
 
-  // Inicializar Minijuegos al cambiar pregunta
   useEffect(() => {
     if (!activeLesson || !activeLesson.quiz[currentQuestionIndex]) return;
     const q = activeLesson.quiz[currentQuestionIndex];
@@ -170,7 +123,6 @@ export const Learn: React.FC = () => {
             { id: `l-${i}`, text: p.left, type: 'left', pairId: i },
             { id: `r-${i}`, text: p.right, type: 'right', pairId: i }
         ]);
-        // Shuffle
         for (let i = items.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [items[i], items[j]] = [items[j], items[i]];
@@ -198,8 +150,6 @@ export const Learn: React.FC = () => {
     }
 
   }, [activeLesson, currentQuestionIndex]);
-
-  // --- HANDLERS PRINCIPALES ---
 
   const handleStartGameMode = async (mode: GameMode) => {
       setGameMode(mode);
@@ -288,8 +238,6 @@ export const Learn: React.FC = () => {
       setIsSimplifying(false);
   };
 
-  // --- INTERACCIONES JUEGOS ---
-
   const handleMatchClick = (item: any) => {
       if (matchingState.matchedIds.includes(item.id)) return;
       if (!matchingState.selectedId) {
@@ -307,7 +255,7 @@ export const Learn: React.FC = () => {
               setMatchingState(prev => ({ ...prev, selectedId: null, matchedIds: [...prev.matchedIds, first!.id, second.id] }));
           } else {
               setShake(true);
-              playSound('fail');
+              playSound('error'); // Antes era 'fail'
               setTimeout(() => setShake(false), 500);
               setMatchingState(prev => ({ ...prev, selectedId: null }));
           }
@@ -335,7 +283,7 @@ export const Learn: React.FC = () => {
           correctCount: isCorrect ? prev.correctCount + 1 : prev.correctCount,
           answers: [...prev.answers, isCorrect]
       }));
-      playSound(isCorrect ? 'pop' : 'fail');
+      playSound(isCorrect ? 'pop' : 'error');
   };
 
   const checkAnswer = () => {
@@ -347,7 +295,6 @@ export const Learn: React.FC = () => {
 
     let correct = false;
 
-    // Lógica de validación
     if (q.type === 'matching') {
         correct = matchingState.matchedIds.length === matchingState.shuffledItems.length;
     } 
@@ -378,7 +325,6 @@ export const Learn: React.FC = () => {
         correct = sentimentState.correctCount >= (q.sentimentCards?.length || 0) * 0.8; 
     }
     else {
-        // Multiple Choice / True False
         const indexMatch = selectedOption === q.correctIndex;
         let textMatch = false;
         if (selectedOption !== null && q.options && q.options[selectedOption]) {
@@ -399,7 +345,7 @@ export const Learn: React.FC = () => {
       setCombo(0);
       setShake(true);
       deductHeart();
-      playSound('fail');
+      playSound('error');
       if (gameMode === 'survival') {
           setTimeout(() => setShowGameOver(true), 1000);
       }
@@ -464,14 +410,13 @@ export const Learn: React.FC = () => {
            onStartGameMode={handleStartGameMode}
            onUpdateStats={updateStats}
            playSound={playSound}
-           onOpenChest={openChest} // AQUÍ SE USA EL NOMBRE DEL CONTEXTO
+           onOpenChest={openChest} 
         />
      );
   }
 
   const q = activeLesson.quiz[currentQuestionIndex];
   
-  // Safe Fallback for Malformed Minigame Data
   const isMinigameBroken = 
       (q.type === 'portfolio_balancing' && !q.portfolioAssets) || 
       (q.type === 'sentiment_swipe' && !q.sentimentCards) ||
@@ -532,7 +477,6 @@ export const Learn: React.FC = () => {
                 
                 {/* --- RENDERIZADO DE PREGUNTAS --- */}
                 
-                {/* 1. Multiple Choice / True False */}
                 {['multiple_choice', 'true_false', 'binary_prediction'].includes(q.type) && (
                       <div className="grid gap-4">
                          {q.options?.map((opt, i) => (
@@ -551,12 +495,9 @@ export const Learn: React.FC = () => {
                       </div>
                 )}
 
-                {/* 2. Minijuegos (Copiar tal cual el JSX original si falta algo, pero aquí va lo básico) */}
-                
                 {/* Candle Chart */}
                 {q.type === 'candle_chart' && (
                     <div className="flex flex-col items-center">
-                        {/* (Chart SVG Placeholder - simplificado para brevedad) */}
                         <div className="w-full h-64 bg-slate-900 rounded-2xl border border-slate-700 mb-6 flex items-center justify-center">
                            <span className="text-slate-500">Gráfico Simulado: {q.chartData?.trend}</span>
                         </div>

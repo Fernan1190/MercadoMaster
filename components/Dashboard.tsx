@@ -2,33 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext'; 
 import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
 import { TradingTerminal } from './TradingTerminal';
-import { PortfolioChart } from './PortfolioChart'; // NUEVO
-import { TransactionList } from './TransactionList'; // NUEVO
+import { PortfolioChart } from './PortfolioChart'; 
+import { TransactionList } from './TransactionList'; 
 
 interface DashboardProps {
   setView: (view: string) => void;
 }
 
-const NEWS_TICKER = [
-  "Bitcoin supera resistencia clave en $65k",
-  "La Fed anuncia posible recorte de tasas",
-  "Tesla reporta ganancias récord este Q3",
-  "Mercados asiáticos abren con volatilidad",
-  "El oro alcanza máximo histórico"
-];
-
-const QUOTES = [
+const STATIC_QUOTES = [
   { text: "El riesgo viene de no saber lo que estás haciendo.", author: "Warren Buffett" },
-  { text: "El mercado es un mecanismo para transferir dinero del impaciente al paciente.", author: "Warren Buffett" },
-  { text: "En la inversión, lo que es cómodo rara vez es rentable.", author: "Robert Arnott" },
+  { text: "El mercado transfiere dinero del impaciente al paciente.", author: "Warren Buffett" },
 ];
 
 const GLOSSARY_TERMS = [
   { term: "Bull Market", def: "Mercado con tendencia alcista." },
   { term: "Bear Market", def: "Mercado con tendencia bajista." },
-  { term: "ROI", def: "Retorno sobre la Inversión." },
-  { term: "Stop Loss", def: "Orden automática para limitar pérdidas." },
-  { term: "FOMO", def: "Miedo a perderse una oportunidad." },
   { term: "HODL", def: "Mantener activos a largo plazo sin vender." },
 ];
 
@@ -39,18 +27,41 @@ const ECONOMIC_EVENTS = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { stats, actions } = useGame();
+  const { stats, actions, market } = useGame(); // Traemos 'market' para las noticias
   const { mineCoin, stakeCoins, unstakeCoins, toggleTheme, updateNotes } = actions;
 
-  const [newsIndex, setNewsIndex] = useState(0);
-  const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  const [news, setNews] = useState("Bienvenido a MercadoMaster. El mercado está abriendo...");
+  const [quote] = useState(STATIC_QUOTES[Math.floor(Math.random() * STATIC_QUOTES.length)]);
   const [wordOfDay] = useState(GLOSSARY_TERMS[Math.floor(Math.random() * GLOSSARY_TERMS.length)]);
   const [zenMode, setZenMode] = useState(false);
-  
   const [timeNY, setTimeNY] = useState('');
   const [timeLondon, setTimeLondon] = useState('');
   const [timeTokyo, setTimeTokyo] = useState('');
 
+  // --- NOTICIAS DINÁMICAS ---
+  // Cambian según si BTC sube o baja en el contexto global
+  useEffect(() => {
+    const trend = market.trend['BTC'];
+    const price = market.prices['BTC'];
+    
+    if (trend === 'up') {
+        const bullishNews = [
+            `🚀 Bitcoin rompe barreras y alcanza $${price.toFixed(0)}!`,
+            "Los inversores institucionales están comprando agresivamente.",
+            "Analistas predicen un nuevo máximo histórico inminente."
+        ];
+        setNews(bullishNews[Math.floor(Math.random() * bullishNews.length)]);
+    } else if (trend === 'down') {
+        const bearishNews = [
+            `📉 Corrección fuerte: BTC cae a $${price.toFixed(0)}.`,
+            "Pánico en los mercados tras rumores de regulación.",
+            "Oportunidad de compra: El mercado está en descuento."
+        ];
+        setNews(bearishNews[Math.floor(Math.random() * bearishNews.length)]);
+    }
+  }, [market.trend['BTC']]); // Se actualiza solo cuando cambia la tendencia
+
+  // Relojes
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -60,13 +71,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNewsIndex(prev => (prev + 1) % NEWS_TICKER.length);
-    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,9 +90,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
            <p className="text-slate-400">Resumen de tu imperio financiero.</p>
         </div>
         {!zenMode && (
-        <div className="hidden md:flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700/50">
-            <Newspaper size={16} className="text-slate-400"/>
-            <span className="text-sm text-slate-300 font-mono w-64 truncate">{NEWS_TICKER[newsIndex]}</span>
+        <div className="hidden md:flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-slate-700/50 animate-pulse">
+            <Newspaper size={16} className="text-blue-400"/>
+            <span className="text-sm text-slate-300 font-mono w-96 truncate">{news}</span>
         </div>
         )}
       </div>

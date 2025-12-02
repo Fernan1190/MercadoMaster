@@ -5,9 +5,72 @@ import { LessonContent } from '../types';
 export const STATIC_LESSONS: Record<string, LessonContent> = {
   // --- STOCKS PATH ---
   
-  // Unit 1: Fundamentos (s1)
+  // NIVEL 1: TENDENCIAS (Con gráficos animados)
   "stocks-s1-1": {
-    id: "stocks-s1-1",
+      id: "stocks-s1-1",
+      title: "Tendencias de Mercado",
+      isBossLevel: false,
+      generatedBy: "static",
+      slides: [
+          {
+              title: "Tendencia Alcista (Bullish)",
+              content: "Una **Tendencia Alcista** se define por una serie de máximos y mínimos cada vez más altos. Los compradores tienen el control y empujan el precio hacia arriba con fuerza.",
+              analogy: "Es como subir una escalera: das un paso atrás para descansar, pero luego subes dos más.",
+              icon: "🚀",
+              // GRÁFICO ALCISTA
+              visualType: "chart_line",
+              visualMeta: { trend: "up", label: "Máximos Crecientes" }
+          },
+          {
+              title: "Tendencia Bajista (Bearish)",
+              content: "Por el contrario, una **Tendencia Bajista** ocurre cuando el precio crea máximos y mínimos cada vez más bajos. El pánico o la toma de ganancias dominan.",
+              analogy: "Una pelota cayendo por una colina.",
+              icon: "📉",
+              // GRÁFICO BAJISTA
+              visualType: "chart_line",
+              visualMeta: { trend: "down", label: "Mínimos Decrecientes" }
+          }
+      ],
+      quiz: [
+          {
+              type: "candle_chart",
+              question: "¿Qué tipo de tendencia muestra este patrón de velas?",
+              chartData: { trend: 'up', indicatorHint: "Mínimos crecientes" },
+              difficulty: "easy",
+              explanation: "Es una tendencia alcista clara.",
+              options: ["Alcista (Bullish)", "Bajista (Bearish)"],
+              correctIndex: 0,
+              correctAnswerText: "Alcista (Bullish)"
+          }
+      ]
+  },
+  "stocks-s1-2": {
+      id: "stocks-s1-2",
+      title: "Riesgo vs Recompensa",
+      isBossLevel: false,
+      generatedBy: "static",
+      slides: [
+          {
+              title: "El Balancín Financiero",
+              content: "En finanzas, no hay almuerzos gratis. Si quieres ganar más dinero (Recompensa), debes estar dispuesto a asumir más posibilidad de perderlo (Riesgo). \n\nLos Bonos del gobierno son seguros pero pagan poco. Las acciones tecnológicas son volátiles pero pueden multiplicar tu dinero.",
+              analogy: "A mayor velocidad (rendimiento), mayor riesgo de choque.",
+              icon: "⚖️"
+          }
+      ],
+      quiz: [
+          {
+              type: "risk_slider",
+              question: "Ajusta el nivel de riesgo para un estudiante de 20 años con $500 que quiere aprender y crecer su capital.",
+              riskScenario: { correctValue: 80, tolerance: 20, minLabel: "Conservador (Bonos)", maxLabel: "Agresivo (Acciones)" },
+              difficulty: "medium",
+              explanation: "Al ser joven y tener poco capital, tienes tiempo para recuperarte de caídas, por lo que puedes permitirte asumir más riesgo para buscar mayor crecimiento.",
+              pedagogicalGoal: "Perfil de Riesgo"
+          }
+      ]
+  },
+  // NIVEL 3: ANTES ERA EL 1 (La Pizza)
+  "stocks-s1-3": {
+    id: "stocks-s1-3",
     title: "¿Qué es una Acción?",
     isBossLevel: false,
     generatedBy: "static",
@@ -36,78 +99,8 @@ export const STATIC_LESSONS: Record<string, LessonContent> = {
         difficulty: "easy",
         explanation: "Las acciones representan capital social (equity), lo que significa que posees una fracción del negocio.",
         pedagogicalGoal: "Concepto de Acción"
-      },
-      {
-        type: "true_false",
-        question: "¿El dueño de una acción es responsable de las deudas de la empresa con sus bienes personales?",
-        options: ["Verdadero", "Falso"],
-        correctIndex: 1,
-        correctAnswerText: "Falso",
-        difficulty: "medium",
-        explanation: "Esa es la ventaja de la 'Responsabilidad Limitada'. Lo máximo que puedes perder es lo que invertiste en la acción.",
-        pedagogicalGoal: "Responsabilidad Limitada"
       }
     ]
-  },
-  "stocks-s1-2": {
-      id: "stocks-s1-2",
-      title: "Riesgo vs Recompensa",
-      isBossLevel: false,
-      generatedBy: "static",
-      slides: [
-          {
-              title: "El Balancín Financiero",
-              content: "En finanzas, no hay almuerzos gratis. Si quieres ganar más dinero (Recompensa), debes estar dispuesto a asumir más posibilidad de perderlo (Riesgo). \n\nLos Bonos del gobierno son seguros pero pagan poco. Las acciones tecnológicas son volátiles pero pueden multiplicar tu dinero.",
-              analogy: "A mayor velocidad (rendimiento), mayor riesgo de choque.",
-              icon: "⚖️"
-          }
-      ],
-      quiz: [
-          {
-              type: "risk_slider",
-              question: "Ajusta el nivel de riesgo para un estudiante de 20 años con $500 que quiere aprender y crecer su capital.",
-              riskScenario: { correctValue: 80, tolerance: 20, minLabel: "Conservador (Bonos)", maxLabel: "Agresivo (Acciones)" },
-              difficulty: "medium",
-              explanation: "Al ser joven y tener poco capital, tienes tiempo para recuperarte de caídas, por lo que puedes permitirte asumir más riesgo para buscar mayor crecimiento.",
-              pedagogicalGoal: "Perfil de Riesgo"
-          }
-      ]
-  },
-  "stocks-s1-3": {
-      id: "stocks-s1-3",
-      title: "Tendencias de Mercado",
-      isBossLevel: false,
-      generatedBy: "static",
-      slides: [
-          {
-              title: "Tendencia Alcista (Bullish)",
-              content: "Una **Tendencia Alcista** se define por una serie de máximos y mínimos cada vez más altos. Los compradores tienen el control y empujan el precio hacia arriba con fuerza.",
-              analogy: "Es como subir una escalera: das un paso atrás para descansar, pero luego subes dos más.",
-              icon: "🚀",
-              visualType: "chart_line",
-              visualMeta: { trend: "up", label: "Máximos Crecientes" }
-          },
-          {
-              title: "Tendencia Bajista (Bearish)",
-              content: "Por el contrario, una **Tendencia Bajista** ocurre cuando el precio crea máximos y mínimos cada vez más bajos. El pánico o la toma de ganancias dominan.",
-              analogy: "Una pelota cayendo por una colina.",
-              icon: "📉",
-              visualType: "chart_line",
-              visualMeta: { trend: "down", label: "Mínimos Decrecientes" }
-          }
-      ],
-      quiz: [
-          {
-              type: "candle_chart",
-              question: "¿Qué tipo de tendencia muestra este patrón de velas?",
-              chartData: { trend: 'up', indicatorHint: "Mínimos crecientes" },
-              difficulty: "easy",
-              explanation: "Es una tendencia alcista clara.",
-              options: ["Alcista (Bullish)", "Bajista (Bearish)"],
-              correctIndex: 0,
-              correctAnswerText: "Alcista (Bullish)"
-          }
-      ]
   },
   "stocks-s1-4": {
       id: "stocks-s1-4",

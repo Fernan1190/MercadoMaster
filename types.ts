@@ -8,6 +8,9 @@ export interface UserStats {
   maxHearts: number;
   portfolio: { [symbol: string]: number };
   transactions: Transaction[];
+  // --- NUEVO CAMPO ---
+  unlockedAchievements: string[]; 
+  // -------------------
   masterCoins: number;
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
@@ -33,6 +36,7 @@ export interface UserStats {
   quickNotes: string;
 }
 
+// ... (El resto del archivo Transaction, Unit, etc. se queda IGUAL)
 export interface Transaction {
   id: string;
   type: 'buy' | 'sell';
@@ -101,7 +105,6 @@ export interface TheorySlide {
   realWorldExample?: string;
   icon: string;
   visualType?: 'chart_line' | 'chart_candle' | 'chart_volume' | 'diagram_flow' | 'none';
-  // NUEVO CAMPO PARA CONFIGURAR EL GRÁFICO EDUCATIVO
   visualMeta?: {
     trend?: 'up' | 'down' | 'volatile' | 'flat';
     showIndicators?: boolean;
