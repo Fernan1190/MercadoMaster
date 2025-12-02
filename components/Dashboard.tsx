@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext'; // Importamos el hook
 import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
+import { TradingTerminal } from './TradingTerminal'; // Importa el nuevo componente
 
 interface DashboardProps {
   setView: (view: string) => void;
@@ -217,20 +218,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
         {/* Balance Card */}
-        <div className="md:col-span-8 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
-            <div className="flex justify-between items-start mb-8">
-               <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase mb-1">Portafolio Simulado</p>
-                  <h3 className="text-3xl font-mono font-bold text-white">${stats.balance.toLocaleString()}</h3>
-               </div>
-               <div className="bg-green-500/20 p-2 rounded-lg text-green-400"><Wallet size={24}/></div>
-            </div>
-            <div className="flex items-end gap-1 h-12 opacity-50">
-               {[40, 60, 45, 70, 65, 85, 80, 100, 90, 110, 105, 120].map((h, i) => (
-                  <div key={i} className="flex-1 bg-green-500 rounded-t-sm" style={{ height: `${h}%` }}></div>
-               ))}
-            </div>
-        </div>
+        <div className="md:col-span-8">
+            <TradingTerminal />
+         </div>
 
         {/* Quote of the Day */}
         <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col justify-center text-center">

@@ -7,6 +7,7 @@ export interface UserStats {
   balance: number; // Virtual money for paper trading
   hearts: number; // Current lives (max 5)
   maxHearts: number;
+  portfolio: { [symbol: string]: number };
   masterCoins: number; // Gamified currency
   completedLessons: string[]; // Keep for legacy compatibility or achievements
   levelRatings: { [lessonId: string]: 1 | 2 | 3 }; // NEW: Stars per level (1-3)
@@ -198,4 +199,20 @@ export interface SimSettings {
    leverage: number; // 1, 5, 10, 50
    showRSI: boolean;
    showSMA: boolean;
+}
+
+export interface Asset {
+  symbol: string;
+  name: string;
+  price: number;
+  change24h: number; // Porcentaje de cambio simulado
+  type: 'crypto' | 'stock';
+}
+
+export interface CandleData {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
 }

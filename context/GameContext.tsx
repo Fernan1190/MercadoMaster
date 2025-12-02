@@ -15,6 +15,7 @@ const INITIAL_STATS: UserStats = {
   streak: 1,
   balance: 10000,
   hearts: 5,
+  portfolio: {},
   maxHearts: 5,
   masterCoins: 350, 
   completedLessons: [],
@@ -56,6 +57,12 @@ interface GameContextType {
     toggleTheme: () => void;
     updateNotes: (notes: string) => void;
     getThemeClass: () => string;
+    buyAsset: (symbol: string, amount: number, price: number) => void;
+    sellAsset: (symbol: string, amount: number, price: number) => void;
+  };
+  market: {
+    prices: { [symbol: string]: number };
+    history: { [symbol: string]: any[] }; // CandleData[]
   };
 }
 
@@ -244,3 +251,42 @@ export const useGame = () => {
   }
   return context;
 };
+
+// ESTADO DEL MERCADO (Volátil, no se guarda en localStorage)
+  const [marketPrices, setMarketPrices] = useState(INITIAL_PRICES as any);
+  // Aquí podrías añadir lógica para actualizar precios cada X segundos usando marketSimulator
+
+  // --- NUEVAS ACCIONES DE TRADING ---
+
+  const buyAsset = (symbol: string, amount: number, currentPrice: number) => {
+    const totalCost = amount * currentPrice;
+    if (stats.balance >= totalCost) {
+      setStats(prev => ({
+        ...prev,
+        balance: prev.balance - totalCost,
+        portfolio: {
+          ...prev.portfolio,
+          [symbol]: (prev.portfolio[symbol] || 0) + amount
+        }
+      }));
+      return true; // Éxito
+    }
+    return false; // Fondos insuficientes
+  };
+
+  const sellAsset = (symbol: string, amount: number, currentPrice: number) => {
+    const currentQty = stats.portfolio[symbol] || 0;
+    if (currentQty >= amount) {
+      const totalGain = amount * currentPrice;
+      setStats(prev => ({
+        ...prev,
+        balance: prev.balance + totalGain,
+        portfolio: {
+          ...prev.portfolio,
+          [symbol]: currentQty - amount
+        }
+      }));
+      return true;
+    }
+    return false;
+  };
