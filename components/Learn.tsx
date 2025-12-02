@@ -1,13 +1,14 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Book, Star, Lock, CheckCircle, XCircle, ArrowRight, Home, Zap, Award, Volume2, ArrowLeft, Loader2, Play, TrendingUp, TrendingDown, Bitcoin, Heart, HeartCrack, Coins, Puzzle, ListOrdered, BrainCircuit, Skull, Timer, Hammer, Shield, Snowflake, Eye, VolumeX, Lightbulb, Bot, Backpack, Wand2, Forward, BookMarked, HelpCircle, PackageOpen, Gift, MapPin, Volume1, AlertTriangle, Terminal, ChevronDown, ChevronUp, Info, MousePointerClick, ThumbsUp, ThumbsDown, Cloud, Trees, Cpu, Rocket, Mountain, Target, PieChart, Activity, Sliders } from 'lucide-react';
-import { UserStats, PathId, LessonContent, Unit, LearningPath, QuestionType, GameMode } from '../types';
-import { getLesson } from '../services/contentService'; // CHANGED IMPORT
+import React, { useState, useEffect } from 'react';
+import { useGame } from '../context/GameContext'; // Hook del contexto
+import { XCircle, Timer, Heart, Loader2 } from 'lucide-react';
+import { PathId, LessonContent, Unit, LearningPath, GameMode } from '../types';
+import { getLesson } from '../services/contentService';
 import { simplifyText } from '../services/geminiService';
 import { LessonMap } from './learn/LessonMap';
 import { LessonTheory } from './learn/LessonTheory';
 import { LessonOverlays } from './learn/LessonOverlays';
 
+// Definición de PATHS (Mantenemos la que ya tenías o la movemos a un archivo de constantes aparte en el futuro)
 const PATHS: Record<PathId, LearningPath> = {
   [PathId.STOCKS]: {
     id: PathId.STOCKS,
@@ -38,16 +39,6 @@ const PATHS: Record<PathId, LearningPath> = {
     ]
   }
 };
-
-interface LearnProps {
-  stats: UserStats;
-  updateStats: (xp: number, pathId: PathId, levelIncrement: number, perfectRun: boolean) => void;
-  deductHeart: () => void;
-  buyHearts: () => boolean;
-  useItem: (type: 'hint5050' | 'timeFreeze' | 'skip') => boolean;
-  addBookmark: (term: string) => void;
-  onOpenChest: (chestId: string) => void;
-}
 
 type LessonPhase = 'intro' | 'theory' | 'quiz' | 'outro';
 

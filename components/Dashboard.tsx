@@ -1,16 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { UserStats } from '../types';
-import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useGame } from '../context/GameContext'; // Importamos el hook
+import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
 
 interface DashboardProps {
-  stats: UserStats;
   setView: (view: string) => void;
-  onMine: () => void;
-  onStake: () => void;
-  onUnstake: () => void;
-  onToggleTheme: () => void;
-  onUpdateNotes: (notes: string) => void;
 }
 
 const NEWS_TICKER = [
@@ -42,18 +35,20 @@ const ECONOMIC_EVENTS = [
   { time: "16:00", event: "Inventarios de crudo", impact: "medium" },
 ];
 
-export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, onStake, onUnstake, onToggleTheme, onUpdateNotes }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
+  // CONEXIÓN DIRECTA CON EL CEREBRO DE LA APP
+  const { stats, actions } = useGame();
+  const { mineCoin, stakeCoins, unstakeCoins, toggleTheme, updateNotes } = actions;
+
   const [newsIndex, setNewsIndex] = useState(0);
   const [quote] = useState(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
   const [wordOfDay] = useState(GLOSSARY_TERMS[Math.floor(Math.random() * GLOSSARY_TERMS.length)]);
   const [zenMode, setZenMode] = useState(false);
   
-  // World Clock State
   const [timeNY, setTimeNY] = useState('');
   const [timeLondon, setTimeLondon] = useState('');
   const [timeTokyo, setTimeTokyo] = useState('');
 
-  // Clocks Ticker
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -62,11 +57,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
       setTimeTokyo(now.toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }));
     };
     updateTime();
-    const interval = setInterval(updateTime, 1000); // Update every second
+    const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // News Ticker Effect
   useEffect(() => {
     const interval = setInterval(() => {
       setNewsIndex(prev => (prev + 1) % NEWS_TICKER.length);
@@ -80,7 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
         <div>
            <h1 className="text-4xl font-black text-white mb-2 tracking-tight flex items-center gap-3">
               Inicio
-              <button onClick={onToggleTheme} className="p-2 bg-slate-800 rounded-lg border border-slate-700 hover:text-green-400 transition-colors" title="Cambiar Tema">
+              <button onClick={toggleTheme} className="p-2 bg-slate-800 rounded-lg border border-slate-700 hover:text-green-400 transition-colors" title="Cambiar Tema">
                  <Settings size={20} />
               </button>
               <button onClick={() => setZenMode(!zenMode)} className={`p-2 rounded-lg border transition-colors ${zenMode ? 'bg-indigo-500 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 hover:text-indigo-400'}`} title="Modo Zen">
@@ -121,7 +115,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
         </div>
         )}
 
-        {/* Continue Learning (Large Card) - Always Visible */}
+        {/* Continue Learning (Large Card) */}
         <div onClick={() => setView('learn')} className={`${zenMode ? 'md:col-span-12 h-96' : 'md:col-span-4 row-span-2'} bg-gradient-to-br from-green-600 to-emerald-800 rounded-[2.5rem] p-8 relative overflow-hidden group cursor-pointer shadow-2xl transition-all hover:scale-[1.01] flex flex-col justify-between`}>
             <div className="absolute top-0 right-0 p-20 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors"></div>
             <div className="relative z-10">
@@ -158,7 +152,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
              </div>
         </div>
 
-        {/* Economic Calendar (NEW) */}
+        {/* Economic Calendar */}
         <div className="md:col-span-3 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800">
            <h3 className="text-white font-bold flex items-center gap-2 mb-4"><Calendar size={20} className="text-indigo-500"/> Eventos Hoy</h3>
            <div className="space-y-3">
@@ -172,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
            </div>
         </div>
 
-        {/* Word of Day (NEW) */}
+        {/* Word of Day */}
         <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
            <div className="absolute top-0 right-0 p-12 bg-indigo-500/10 rounded-full blur-2xl"></div>
            <h3 className="text-white font-bold flex items-center gap-2 mb-2"><Book size={20} className="text-indigo-400"/> Palabra del Día</h3>
@@ -180,25 +174,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
            <p className="text-slate-400 text-sm leading-relaxed">{wordOfDay.def}</p>
         </div>
 
-        {/* Quick Notes (NEW) */}
+        {/* Quick Notes */}
         <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col">
            <h3 className="text-white font-bold flex items-center gap-2 mb-3"><Edit3 size={20} className="text-slate-400"/> Notas Rápidas</h3>
            <textarea 
               className="w-full h-24 bg-slate-800/50 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-500 resize-none"
               placeholder="Ideas de trading..."
               value={stats.quickNotes}
-              onChange={(e) => onUpdateNotes(e.target.value)}
+              onChange={(e) => updateNotes(e.target.value)}
            ></textarea>
         </div>
 
-        {/* Mining Rig Clicker */}
+        {/* Mining Rig */}
         <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-white font-bold flex items-center gap-2"><Pickaxe size={20} className="text-yellow-500"/> Minería BTC</h3>
                <span className="text-xs text-slate-500 font-mono">{stats.minedCoins} Mined</span>
             </div>
             <button 
-               onClick={onMine}
+               onClick={mineCoin}
                className="w-full py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 group-hover:border-yellow-500/50 shadow-lg"
             >
                <div className="p-2 bg-yellow-500/20 rounded-full text-yellow-500 animate-pulse"><Zap size={20} fill="currentColor"/></div>
@@ -217,8 +211,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
                <div className="text-xs text-slate-500 uppercase">Bloqueado</div>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
-               <button onClick={onStake} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold py-2 rounded-lg border border-emerald-600/30">Deposit</button>
-               <button onClick={onUnstake} className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg">Withdraw</button>
+               <button onClick={stakeCoins} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold py-2 rounded-lg border border-emerald-600/30">Deposit</button>
+               <button onClick={unstakeCoins} className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg">Withdraw</button>
             </div>
         </div>
 
@@ -231,7 +225,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
                </div>
                <div className="bg-green-500/20 p-2 rounded-lg text-green-400"><Wallet size={24}/></div>
             </div>
-            {/* Fake Chart Line */}
             <div className="flex items-end gap-1 h-12 opacity-50">
                {[40, 60, 45, 70, 65, 85, 80, 100, 90, 110, 105, 120].map((h, i) => (
                   <div key={i} className="flex-1 bg-green-500 rounded-t-sm" style={{ height: `${h}%` }}></div>
@@ -264,7 +257,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, setView, onMine, on
            </div>
         </div>
 
-        {/* Streak Calendar Widget */}
+        {/* Streak Calendar */}
         <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-white font-bold flex items-center gap-2"><Calendar size={20} className="text-orange-500"/> Racha</h3>
