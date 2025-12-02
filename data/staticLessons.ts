@@ -1,4 +1,3 @@
-
 import { LessonContent } from '../types';
 
 // Database of static, handcrafted lessons to ensure high quality for initial levels
@@ -76,28 +75,37 @@ export const STATIC_LESSONS: Record<string, LessonContent> = {
   },
   "stocks-s1-3": {
       id: "stocks-s1-3",
-      title: "Velas Japonesas",
+      title: "Tendencias de Mercado",
       isBossLevel: false,
       generatedBy: "static",
       slides: [
           {
-              title: "Leyendo el Precio",
-              content: "Los traders no usan líneas simples. Usan **Velas Japonesas**. Cada vela te cuenta una historia de lo que pasó en un periodo de tiempo (ej. 1 día).\n\nEl cuerpo grueso muestra dónde abrió y cerró el precio. Las 'mechas' (líneas finas) muestran hasta dónde llegó el precio máximo y mínimo.",
-              analogy: "Una vela es como el resumen del partido, no solo el resultado final.",
-              icon: "🕯️"
+              title: "Tendencia Alcista (Bullish)",
+              content: "Una **Tendencia Alcista** se define por una serie de máximos y mínimos cada vez más altos. Los compradores tienen el control y empujan el precio hacia arriba con fuerza.",
+              analogy: "Es como subir una escalera: das un paso atrás para descansar, pero luego subes dos más.",
+              icon: "🚀",
+              visualType: "chart_line",
+              visualMeta: { trend: "up", label: "Máximos Crecientes" }
+          },
+          {
+              title: "Tendencia Bajista (Bearish)",
+              content: "Por el contrario, una **Tendencia Bajista** ocurre cuando el precio crea máximos y mínimos cada vez más bajos. El pánico o la toma de ganancias dominan.",
+              analogy: "Una pelota cayendo por una colina.",
+              icon: "📉",
+              visualType: "chart_line",
+              visualMeta: { trend: "down", label: "Mínimos Decrecientes" }
           }
       ],
       quiz: [
           {
               type: "candle_chart",
-              question: "Observa el patrón. Vemos mínimos cada vez más altos y una fuerte vela verde. ¿Qué tendencia esperas?",
-              chartData: { trend: 'up', indicatorHint: "Tendencia Alcista Clara" },
-              difficulty: "medium",
-              explanation: "Mínimos crecientes y velas verdes fuertes indican que los compradores tienen el control (Tendencia Alcista).",
-              pedagogicalGoal: "Análisis Técnico Básico",
-              options: ["SUBIRÁ", "BAJARÁ"],
+              question: "¿Qué tipo de tendencia muestra este patrón de velas?",
+              chartData: { trend: 'up', indicatorHint: "Mínimos crecientes" },
+              difficulty: "easy",
+              explanation: "Es una tendencia alcista clara.",
+              options: ["Alcista (Bullish)", "Bajista (Bearish)"],
               correctIndex: 0,
-              correctAnswerText: "SUBIRÁ"
+              correctAnswerText: "Alcista (Bullish)"
           }
       ]
   },

@@ -1,19 +1,18 @@
-
 export interface UserStats {
   xp: number;
   level: number;
   league: 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Master';
   streak: number;
-  balance: number; // Virtual money for paper trading
-  hearts: number; // Current lives (max 5)
+  balance: number;
+  hearts: number;
   maxHearts: number;
   portfolio: { [symbol: string]: number };
   transactions: Transaction[];
-  masterCoins: number; // Gamified currency
-  completedLessons: string[]; // Keep for legacy compatibility or achievements
-  levelRatings: { [lessonId: string]: 1 | 2 | 3 }; // NEW: Stars per level (1-3)
+  masterCoins: number;
+  completedLessons: string[];
+  levelRatings: { [lessonId: string]: 1 | 2 | 3 };
   pathProgress: {
-    [key in PathId]?: number; // Current level index per path
+    [key in PathId]?: number;
   };
   inventory: {
     hint5050: number;
@@ -22,17 +21,25 @@ export interface UserStats {
     streakFreeze: number;
     doubleXp: number;
   };
-  bookmarks: string[]; // Saved terms
+  bookmarks: string[];
   dailyQuests: DailyQuest[];
   lastLogin?: string;
-  openedChests: string[]; // NEW: Track opened chests
+  openedChests: string[];
   
-  // NEW FEATURES
   theme: 'default' | 'cyberpunk' | 'terminal';
   prestige: number;
-  stakedCoins: number; // Coins locked in safe
-  minedCoins: number; // Coins from clicker
-  quickNotes: string; // Persistent notepad
+  stakedCoins: number;
+  minedCoins: number;
+  quickNotes: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'buy' | 'sell';
+  symbol: string;
+  amount: number;
+  price: number;
+  timestamp: string;
 }
 
 export enum PathId {
@@ -44,9 +51,9 @@ export interface Unit {
   id: string;
   title: string;
   description: string;
-  color: string; // Tailwind color class base (e.g. 'blue', 'purple')
+  color: string;
   totalLevels: number;
-  biome?: 'neon' | 'forest' | 'ocean' | 'volcano' | 'space'; // NEW: Visual theme
+  biome?: 'neon' | 'forest' | 'ocean' | 'volcano' | 'space';
 }
 
 export interface LearningPath {
@@ -62,75 +69,58 @@ export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'orde
 
 export interface QuizQuestion {
   type: QuestionType;
-  question: string; // The main instruction or scenario
+  question: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  
-  // Pedagogical Fields (NEW)
-  pedagogicalGoal?: string; // What skill is being tested?
+  pedagogicalGoal?: string;
   bloomLevel?: 'remember' | 'understand' | 'apply' | 'analyze';
-  scenarioContext?: string; // Background info for the question
-
-  // For multiple_choice / true_false / binary_prediction
-  options?: string[]; 
+  scenarioContext?: string;
+  options?: string[];
   correctIndex?: number;
-  correctAnswerText?: string; // CRITICAL for validation
-  
-  // For matching (Pairs)
-  pairs?: { left: string; right: string }[]; 
-
-  // For ordering (Sequence)
-  correctOrder?: string[]; 
-
-  // For Candle Chart (Simulated Data)
+  correctAnswerText?: string;
+  pairs?: { left: string; right: string }[];
+  correctOrder?: string[];
   chartData?: { 
     trend: 'up' | 'down' | 'volatile' | 'doji_reversal';
-    indicatorHint?: string; // e.g., "RSI is Overbought"
-  }; 
-
-  // For Word Construction
-  sentenceParts?: string[]; 
-
-  // For Risk Slider
+    indicatorHint?: string; 
+  };
+  sentenceParts?: string[];
   riskScenario?: { correctValue: number; tolerance: number; minLabel: string; maxLabel: string };
-
-  // For Portfolio Balancing
-  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[]; // Max 3 assets
-  portfolioTargetRisk?: number; // Target avg risk score (0-100)
-
-  // For Sentiment Swipe
+  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[];
+  portfolioTargetRisk?: number;
   sentimentCards?: { text: string; sentiment: 'bullish' | 'bearish' }[];
-
-  // For Chart Point (Stop Loss)
   chartPointConfig?: { entryPrice: number; trend: 'up' | 'down'; idealStopLoss: number };
-
   explanation: string;
-  relatedSlideIndex?: number; // Link back to theory
+  relatedSlideIndex?: number;
 }
 
 export interface TheorySlide {
   title: string;
-  content: string; // Markdown
-  simplifiedContent?: string; // "Explain like I'm 5" version (can be generated on fly or pre-gen)
-  analogy: string; // "Think of it like..."
-  realWorldExample?: string; // "For example, Apple in 2020..."
-  icon: string; // Emoji suggestion
-  visualType?: 'chart_line' | 'chart_pie' | 'diagram_flow' | 'none';
-  keyTerms?: string[]; // Terms to add to glossary
-  
-  // New Pedagogical Elements
-  deepDive?: { title: string; content: string }; // Accordion for advanced info
-  commonPitfall?: string; // Warning box
-  proTip?: string; // Expert advice
-  checkpointQuestion?: { question: string; answer: boolean }; // Mini interaction
+  content: string;
+  simplifiedContent?: string;
+  analogy: string;
+  realWorldExample?: string;
+  icon: string;
+  visualType?: 'chart_line' | 'chart_candle' | 'chart_volume' | 'diagram_flow' | 'none';
+  // NUEVO CAMPO PARA CONFIGURAR EL GRÁFICO EDUCATIVO
+  visualMeta?: {
+    trend?: 'up' | 'down' | 'volatile' | 'flat';
+    showIndicators?: boolean;
+    label?: string;
+  };
+  keyTerms?: string[];
+  deepDive?: { title: string; content: string };
+  commonPitfall?: string;
+  proTip?: string;
+  checkpointQuestion?: { question: string; answer: boolean };
 }
 
 export interface LessonContent {
-  id?: string; // Unique ID for caching/stars (pathId-unitId-levelIndex)
+  id?: string;
   title: string;
   isBossLevel: boolean;
-  slides: TheorySlide[]; // NEW: Theory content before quiz
+  slides: TheorySlide[];
   quiz: QuizQuestion[];
-  generatedBy?: 'ai' | 'fallback' | 'static'; // Track source
+  generatedBy?: 'ai' | 'fallback' | 'static';
 }
 
 export interface ChatMessage {
@@ -156,7 +146,7 @@ export interface Achievement {
   id: string;
   title: string;
   description: string;
-  iconName: string; // Icon name reference
+  iconName: string;
   condition: (stats: UserStats) => boolean;
 }
 
@@ -164,7 +154,7 @@ export interface LeaderboardEntry {
   rank: number;
   username: string;
   xp: number;
-  avatar: string; // Emoji or URL
+  avatar: string;
   isCurrentUser?: boolean;
   league: string;
 }
@@ -186,18 +176,16 @@ export interface Order {
   amount: number;
   timestamp: number;
   asset: string;
-  leverage: number; // NEW
-  pl?: number; // Profit/Loss if closed
-  commission?: number; // NEW
+  leverage: number;
+  pl?: number;
+  commission?: number;
 }
 
-// NEW INTERFACES
 export type GameMode = 'standard' | 'survival' | 'time_trial';
-
 export type AIPersona = 'standard' | 'warren' | 'wolf' | 'socrates';
 
 export interface SimSettings {
-   leverage: number; // 1, 5, 10, 50
+   leverage: number;
    showRSI: boolean;
    showSMA: boolean;
 }
@@ -206,7 +194,7 @@ export interface Asset {
   symbol: string;
   name: string;
   price: number;
-  change24h: number; // Porcentaje de cambio simulado
+  change24h: number;
   type: 'crypto' | 'stock';
 }
 
@@ -216,13 +204,4 @@ export interface CandleData {
   high: number;
   low: number;
   close: number;
-}
-
-export interface Transaction {
-  id: string;
-  type: 'buy' | 'sell';
-  symbol: string;
-  amount: number;
-  price: number;
-  timestamp: string; // Guardaremos la fecha como string legible
 }

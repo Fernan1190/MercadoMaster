@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { LessonContent } from '../../types';
 import { Volume1, BookMarked, Wand2, BrainCircuit, ChevronUp, ChevronDown, AlertTriangle, Lightbulb, ArrowRight, Gem, Bot } from 'lucide-react';
+import { EducationalChart } from './EducationalChart';
 
 interface LessonTheoryProps {
   activeLesson: LessonContent;
@@ -97,6 +97,11 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
                    <button onClick={onSimplify} className="p-2 bg-slate-800 rounded-lg border border-slate-700 hover:text-blue-400 shadow-lg text-slate-400" title="Explicar Simple"><Wand2 size={18}/></button>
                 </div>
                 
+                {/* --- GRÁFICO EDUCATIVO AQUI --- */}
+                {slide.visualType && slide.visualType !== 'none' && (
+                   <EducationalChart type={slide.visualType} meta={slide.visualMeta} />
+                )}
+
                 <div className="prose prose-invert prose-xl leading-loose text-slate-300 relative">
                    {/* Floating Glossary Tooltip */}
                    {activeTerm && (
