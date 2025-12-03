@@ -3,14 +3,12 @@ export interface UserStats {
   level: number;
   league: 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Master';
   streak: number;
-  balance: number;
+  balance: number; 
   hearts: number;
   maxHearts: number;
   portfolio: { [symbol: string]: number };
   transactions: Transaction[];
-  // --- NUEVO CAMPO ---
-  unlockedAchievements: string[]; 
-  // -------------------
+  unlockedAchievements: string[];
   masterCoins: number;
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
@@ -30,13 +28,14 @@ export interface UserStats {
   openedChests: string[];
   
   theme: 'default' | 'cyberpunk' | 'terminal';
+  unlockedThemes: string[]; // <--- NUEVO CAMPO
   prestige: number;
   stakedCoins: number;
   minedCoins: number;
   quickNotes: string;
 }
 
-// ... (El resto del archivo Transaction, Unit, etc. se queda IGUAL)
+// ... (Resto del archivo igual: Transaction, PathId, Unit, etc.)
 export interface Transaction {
   id: string;
   type: 'buy' | 'sell';

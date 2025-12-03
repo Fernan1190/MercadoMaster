@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Añadido useCallback
 import { useGame } from '../context/GameContext'; 
 import { XCircle, Timer, Heart } from 'lucide-react';
 import { PathId, LessonContent, Unit, LearningPath, GameMode } from '../types';
@@ -43,7 +43,7 @@ type LessonPhase = 'intro' | 'theory' | 'quiz' | 'outro';
 
 export const Learn: React.FC = () => {
   const { stats, actions } = useGame();
-  const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest, playSound } = actions; // AÑADIDO playSound
+  const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest, playSound } = actions;
 
   const [selectedPathId, setSelectedPathId] = useState<PathId | null>(null);
   const [activeLesson, setActiveLesson] = useState<LessonContent | null>(null);
@@ -91,8 +91,6 @@ export const Learn: React.FC = () => {
     userOrder: string[];
   }>({ pool: [], userOrder: [] });
 
-  // ¡HEMOS BORRADO playSound() LOCAL PORQUE YA USAMOS EL DE CONTEXTO!
-  
   const speakText = (text: string) => { if (isMuted) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; window.speechSynthesis.speak(u); };
 
   useEffect(() => {
@@ -222,12 +220,12 @@ export const Learn: React.FC = () => {
     }
   };
 
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
      setIsCorrect(false);
      setShowFeedback(true);
      setShake(true);
      deductHeart();
-  };
+  }, [deductHeart]); // Añadido useCallback para evitar re-creación
 
   const handleExplainAgain = async () => {
       if (!activeLesson) return;
@@ -255,7 +253,7 @@ export const Learn: React.FC = () => {
               setMatchingState(prev => ({ ...prev, selectedId: null, matchedIds: [...prev.matchedIds, first!.id, second.id] }));
           } else {
               setShake(true);
-              playSound('error'); // Antes era 'fail'
+              playSound('error');
               setTimeout(() => setShake(false), 500);
               setMatchingState(prev => ({ ...prev, selectedId: null }));
           }
@@ -352,7 +350,7 @@ export const Learn: React.FC = () => {
     }
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = useCallback(() => {
     if (!activeLesson) return;
     
     setExplanationOverride(null);
@@ -370,7 +368,24 @@ export const Learn: React.FC = () => {
       playSound('levelUp');
       setTimeout(() => setLootBoxOpen(true), 500);
     }
-  };
+  }, [activeLesson, currentQuestionIndex, gameMode, playSound, stats.hearts]);
+
+  // --- CORRECCIÓN DEL ERROR #301 ---
+  const q = activeLesson?.quiz[currentQuestionIndex];
+  const isMinigameBroken = q && (
+      (q.type === 'portfolio_balancing' && !q.portfolioAssets) || 
+      (q.type === 'sentiment_swipe' && !q.sentimentCards) ||
+      (q.type === 'matching' && !q.pairs)
+  );
+
+  // Usamos useEffect para realizar el "skip" después del renderizado
+  useEffect(() => {
+    if (isMinigameBroken) {
+        const timer = setTimeout(() => nextQuestion(), 100);
+        return () => clearTimeout(timer);
+    }
+  }, [isMinigameBroken, nextQuestion]);
+  // ----------------------------------
 
   const closeLesson = () => {
     if (!selectedPathId) return;
@@ -379,8 +394,6 @@ export const Learn: React.FC = () => {
     setActiveLesson(null);
     setPhase('intro');
   };
-
-  // --- RENDERS ---
 
   if (isLoading || showGameOver || phase === 'outro') {
      return <LessonOverlays 
@@ -415,15 +428,7 @@ export const Learn: React.FC = () => {
      );
   }
 
-  const q = activeLesson.quiz[currentQuestionIndex];
-  
-  const isMinigameBroken = 
-      (q.type === 'portfolio_balancing' && !q.portfolioAssets) || 
-      (q.type === 'sentiment_swipe' && !q.sentimentCards) ||
-      (q.type === 'matching' && !q.pairs);
-
   if (isMinigameBroken) {
-      setTimeout(() => nextQuestion(), 100);
       return <div className="flex justify-center items-center h-full text-white">Optimizando lección...</div>;
   }
 
@@ -475,8 +480,6 @@ export const Learn: React.FC = () => {
 
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-10 text-center drop-shadow-md">{q.question}</h2>
                 
-                {/* --- RENDERIZADO DE PREGUNTAS --- */}
-                
                 {['multiple_choice', 'true_false', 'binary_prediction'].includes(q.type) && (
                       <div className="grid gap-4">
                          {q.options?.map((opt, i) => (
@@ -495,7 +498,6 @@ export const Learn: React.FC = () => {
                       </div>
                 )}
 
-                {/* Candle Chart */}
                 {q.type === 'candle_chart' && (
                     <div className="flex flex-col items-center">
                         <div className="w-full h-64 bg-slate-900 rounded-2xl border border-slate-700 mb-6 flex items-center justify-center">
@@ -508,7 +510,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                {/* Matching */}
                 {q.type === 'matching' && (
                     <div className="grid grid-cols-2 gap-4">
                         {matchingState.shuffledItems.map(item => {
@@ -525,7 +526,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                 {/* Ordering */}
                  {q.type === 'ordering' && (
                     <div className="space-y-4">
                         <div className="min-h-[60px] p-4 bg-slate-900 border border-dashed border-slate-700 rounded-xl flex flex-wrap gap-2">
@@ -541,7 +541,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                {/* Risk Slider */}
                 {q.type === 'risk_slider' && (
                     <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 text-center">
                         <div className="text-4xl font-black mb-4 text-white">{riskSliderValue}%</div>
@@ -551,7 +550,6 @@ export const Learn: React.FC = () => {
 
              </div>
 
-             {/* Footer Botones */}
              {showFeedback ? (
                  <div className={`fixed bottom-0 left-0 w-full p-4 border-t border-slate-800 bg-slate-900 z-[100]`}>
                     <div className="max-w-3xl mx-auto">

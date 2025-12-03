@@ -5,35 +5,49 @@ import { ThermometerSun, Skull, Zap, TrendingUp } from 'lucide-react';
 export const MarketSentiment: React.FC = () => {
   const { market } = useGame();
   const [score, setScore] = useState(50); // 0-100
-  const [label, setLabel] = useState("Neutral");
 
   // El sentimiento reacciona a la tendencia de Bitcoin (BTC)
   useEffect(() => {
     const btcTrend = market.trend['BTC'];
     
-    // Simulación simple: Si sube, la gente se vuelve codiciosa. Si baja, tienen miedo.
     setScore(prev => {
       let change = 0;
-      if (btcTrend === 'up') change = Math.floor(Math.random() * 5) + 1; // +1 a +5
-      else if (btcTrend === 'down') change = -(Math.floor(Math.random() * 5) + 1); // -1 a -5
-      else change = (Math.random() - 0.5) * 2; // Ruido leve
+      if (btcTrend === 'up') change = Math.floor(Math.random() * 5) + 1;
+      else if (btcTrend === 'down') change = -(Math.floor(Math.random() * 5) + 1);
+      else change = (Math.random() - 0.5) * 2;
 
       // Mantener entre 0 y 100
-      const newScore = Math.min(100, Math.max(0, prev + change));
-      return newScore;
+      return Math.min(100, Math.max(0, prev + change));
     });
 
-  }, [market.trend['BTC']]); // Se actualiza con la tendencia
+  }, [market.trend['BTC']]); 
 
-  // Determinar etiqueta y color
-  let colorClass = "text-slate-400";
-  let icon = <Zap />;
+  // --- CORRECCIÓN: Calcular etiqueta al vuelo (Sin setState) ---
+  let label = "Neutral";
+  let colorClass = "text-yellow-400";
+  let icon = <Zap size={20} className="text-yellow-400"/>;
   
-  if (score < 20) { setLabel("Miedo Extremo"); colorClass = "text-red-500"; icon = <Skull />; }
-  else if (score < 40) { setLabel("Miedo"); colorClass = "text-orange-400"; icon = <ThermometerSun />; }
-  else if (score < 60) { setLabel("Neutral"); colorClass = "text-yellow-400"; icon = <Zap />; }
-  else if (score < 80) { setLabel("Codicia"); colorClass = "text-lime-400"; icon = <TrendingUp />; }
-  else { setLabel("Codicia Extrema"); colorClass = "text-green-500"; icon = <TrendingUp />; }
+  if (score < 20) { 
+      label = "Miedo Extremo"; 
+      colorClass = "text-red-500"; 
+      icon = <Skull size={20} className="text-red-500"/>; 
+  } else if (score < 40) { 
+      label = "Miedo"; 
+      colorClass = "text-orange-400"; 
+      icon = <ThermometerSun size={20} className="text-orange-400"/>; 
+  } else if (score < 60) { 
+      label = "Neutral"; 
+      colorClass = "text-yellow-400"; 
+      icon = <Zap size={20} className="text-yellow-400"/>; 
+  } else if (score < 80) { 
+      label = "Codicia"; 
+      colorClass = "text-lime-400"; 
+      icon = <TrendingUp size={20} className="text-lime-400"/>; 
+  } else { 
+      label = "Codicia Extrema"; 
+      colorClass = "text-green-500"; 
+      icon = <TrendingUp size={20} className="text-green-500"/>; 
+  }
 
   // Calcular rotación de la aguja (-90deg a 90deg)
   const rotation = (score / 100) * 180 - 90;
@@ -44,9 +58,9 @@ export const MarketSentiment: React.FC = () => {
        {/* Título */}
        <div className="flex justify-between items-start z-10">
           <h3 className="text-white font-bold flex items-center gap-2">
-             <ThermometerSun size={20} className="text-orange-500"/> Sentimiento
+             {icon} Sentimiento
           </h3>
-          <div className={`text-xs font-black uppercase px-2 py-1 rounded-lg bg-slate-800 ${colorClass}`}>
+          <div className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 ${colorClass}`}>
              {label}
           </div>
        </div>
@@ -56,12 +70,12 @@ export const MarketSentiment: React.FC = () => {
           {/* Arco de fondo */}
           <div className="w-48 h-24 rounded-t-full border-[16px] border-slate-800 box-border absolute bottom-0"></div>
           
-          {/* Arco de color (gradiente CSS simple) */}
+          {/* Arco de color */}
           <div 
             className="w-48 h-24 rounded-t-full border-[16px] border-transparent box-border absolute bottom-0 opacity-50"
             style={{ 
                 background: 'conic-gradient(from 180deg, #ef4444 0deg, #eab308 90deg, #22c55e 180deg)',
-                maskImage: 'radial-gradient(white 55%, transparent 56%)', // Truco para hacer el agujero
+                maskImage: 'radial-gradient(white 55%, transparent 56%)',
                 WebkitMaskImage: 'radial-gradient(transparent 55%, black 56%)' 
             }}
           ></div>

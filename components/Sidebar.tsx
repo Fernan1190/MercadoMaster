@@ -1,18 +1,20 @@
-
 import React from 'react';
-import { BookOpen, LayoutDashboard, Heart, Coins, TrendingUp } from 'lucide-react';
+// IMPORTAR TROPHY
+import { BookOpen, LayoutDashboard, Heart, Coins, TrendingUp, ShoppingBag, Trophy } from 'lucide-react';
 import { UserStats } from '../types';
 
 interface SidebarProps {
   currentView: string;
   setView: (view: string) => void;
-  stats?: UserStats; // Optional prop to display stats
+  stats?: UserStats;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, stats }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
     { id: 'learn', label: 'Aprender', icon: <BookOpen size={20} /> },
+    { id: 'shop', label: 'Tienda', icon: <ShoppingBag size={20} /> },
+    { id: 'leaderboard', label: 'Ranking', icon: <Trophy size={20} /> }, // <--- NUEVO
   ];
 
   const pendingQuests = stats?.dailyQuests.filter(q => !q.completed).length || 0;
@@ -24,7 +26,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, stats })
           <TrendingUp /> MercadoMaster
         </div>
 
-        {/* User Quick Stats (Desktop) */}
         {stats && (
           <div className="hidden md:flex px-6 mb-4 gap-3">
              <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-red-400 text-sm font-bold">
@@ -49,8 +50,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, stats })
             >
               {item.icon}
               <span className="text-xs md:text-sm font-medium">{item.label}</span>
-              
-              {/* Quest Indicator badge */}
               {item.id === 'dashboard' && pendingQuests > 0 && (
                 <span className="absolute top-2 right-2 md:top-3 md:right-4 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               )}

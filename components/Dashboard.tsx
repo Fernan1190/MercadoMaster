@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext'; 
+// AQUI ESTABA EL ERROR: Me aseguro de que ArrowUpRight esté en la lista
 import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
 import { TradingTerminal } from './TradingTerminal';
 import { PortfolioChart } from './PortfolioChart'; 
@@ -13,12 +14,14 @@ interface DashboardProps {
 const STATIC_QUOTES = [
   { text: "El riesgo viene de no saber lo que estás haciendo.", author: "Warren Buffett" },
   { text: "El mercado transfiere dinero del impaciente al paciente.", author: "Warren Buffett" },
+  { text: "En la inversión, lo que es cómodo rara vez es rentable.", author: "Robert Arnott" },
 ];
 
 const GLOSSARY_TERMS = [
   { term: "Bull Market", def: "Mercado con tendencia alcista." },
   { term: "Bear Market", def: "Mercado con tendencia bajista." },
   { term: "HODL", def: "Mantener activos a largo plazo sin vender." },
+  { term: "FOMO", def: "Miedo a perderse una oportunidad." },
 ];
 
 const ECONOMIC_EVENTS = [
@@ -28,7 +31,7 @@ const ECONOMIC_EVENTS = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { stats, actions, market } = useGame(); // Traemos 'market' para las noticias
+  const { stats, actions, market } = useGame();
   const { mineCoin, stakeCoins, unstakeCoins, toggleTheme, updateNotes } = actions;
 
   const [news, setNews] = useState("Bienvenido a MercadoMaster. El mercado está abriendo...");
@@ -39,8 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const [timeLondon, setTimeLondon] = useState('');
   const [timeTokyo, setTimeTokyo] = useState('');
 
-  // --- NOTICIAS DINÁMICAS ---
-  // Cambian según si BTC sube o baja en el contexto global
+  // Noticias dinámicas
   useEffect(() => {
     const trend = market.trend['BTC'];
     const price = market.prices['BTC'];
@@ -48,19 +50,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     if (trend === 'up') {
         const bullishNews = [
             `🚀 Bitcoin rompe barreras y alcanza $${price.toFixed(0)}!`,
-            "Los inversores institucionales están comprando agresivamente.",
-            "Analistas predicen un nuevo máximo histórico inminente."
+            "Inversores institucionales aumentan sus posiciones.",
+            "El sentimiento de mercado se vuelve alcista."
         ];
         setNews(bullishNews[Math.floor(Math.random() * bullishNews.length)]);
     } else if (trend === 'down') {
         const bearishNews = [
             `📉 Corrección fuerte: BTC cae a $${price.toFixed(0)}.`,
-            "Pánico en los mercados tras rumores de regulación.",
-            "Oportunidad de compra: El mercado está en descuento."
+            "Incertidumbre regulatoria provoca ventas.",
+            "Analistas sugieren precaución ante la volatilidad."
         ];
         setNews(bearishNews[Math.floor(Math.random() * bearishNews.length)]);
     }
-  }, [market.trend['BTC']]); // Se actualiza solo cuando cambia la tendencia
+  }, [market.trend['BTC']]);
 
   // Relojes
   useEffect(() => {
@@ -122,7 +124,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
         )}
 
-        {/* Continue Learning */}
+        {/* Continue Learning - AQUI ES DONDE SE USA ArrowUpRight */}
         <div onClick={() => setView('learn')} className={`${zenMode ? 'md:col-span-12 h-96' : 'md:col-span-4 row-span-2'} bg-gradient-to-br from-green-600 to-emerald-800 rounded-[2.5rem] p-8 relative overflow-hidden group cursor-pointer shadow-2xl transition-all hover:scale-[1.01] flex flex-col justify-between`}>
             <div className="absolute top-0 right-0 p-20 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors"></div>
             <div className="relative z-10">
@@ -195,6 +197,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <TransactionList />
         </div>
 
+        {/* MARKET SENTIMENT (NUEVO) */}
+        <div className="md:col-span-4 h-80">
+            <MarketSentiment />
+        </div>
+
+        {/* NOTAS RAPIDAS */}
         <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col">
            <h3 className="text-white font-bold flex items-center gap-2 mb-3"><Edit3 size={20} className="text-slate-400"/> Notas Rápidas</h3>
            <textarea 
@@ -206,7 +214,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
         {/* Mining Rig */}
-        <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
+        <div className="md:col-span-8 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-white font-bold flex items-center gap-2"><Pickaxe size={20} className="text-yellow-500"/> Minería BTC</h3>
                <span className="text-xs text-slate-500 font-mono">{stats.minedCoins} Mined</span>
@@ -233,42 +241,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <div className="grid grid-cols-2 gap-2 mt-2">
                <button onClick={stakeCoins} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold py-2 rounded-lg border border-emerald-600/30">Deposit</button>
                <button onClick={unstakeCoins} className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-2 rounded-lg">Withdraw</button>
-            </div>
-        </div>
-
-        {/* Daily Quests List */}
-        <div className="md:col-span-8 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800">
-           <h3 className="text-white font-bold mb-4 flex items-center gap-2"><Crown size={20} className="text-yellow-500"/> Misiones Diarias</h3>
-           <div className="grid md:grid-cols-3 gap-4">
-              {stats.dailyQuests.map(quest => (
-                 <div key={quest.id} className={`p-4 rounded-2xl border ${quest.completed ? 'bg-green-500/10 border-green-500/30' : 'bg-slate-800 border-slate-700'} transition-all`}>
-                    <div className="flex justify-between items-start mb-2">
-                       <span className={`font-bold text-sm ${quest.completed ? 'text-green-400' : 'text-slate-300'}`}>{quest.text}</span>
-                       <div className="text-xs font-bold bg-slate-900 px-2 py-1 rounded text-yellow-500">+{quest.reward}</div>
-                    </div>
-                    <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                       <div className="bg-yellow-400 h-full transition-all" style={{ width: `${Math.min(100, (quest.progress / quest.target) * 100)}%` }}></div>
-                    </div>
-                 </div>
-              ))}
-           </div>
-        </div>
-
-        {/* Streak Calendar */}
-        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800">
-            <div className="flex justify-between items-center mb-4">
-               <h3 className="text-white font-bold flex items-center gap-2"><Calendar size={20} className="text-orange-500"/> Racha</h3>
-               <span className="text-orange-500 font-bold">{stats.streak} Días</span>
-            </div>
-            <div className="flex justify-between">
-               {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2">
-                     <span className="text-xs text-slate-500 font-bold">{day}</span>
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${i < (stats.streak % 7) ? 'bg-orange-500 text-slate-900' : 'bg-slate-800 text-slate-600'}`}>
-                        {i < (stats.streak % 7) ? <Zap size={14} fill="currentColor"/> : i + 1}
-                     </div>
-                  </div>
-               ))}
             </div>
         </div>
 

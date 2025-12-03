@@ -1,7 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useGame } from '../context/GameContext';
-import { Wallet } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'];
 
@@ -17,6 +17,10 @@ export const PortfolioChart: React.FC = () => {
   ];
 
   const totalValue = data.reduce((sum, item) => sum + item.value, 0);
+  const initialCapital = 10000; // Capital base del juego
+  const profit = totalValue - initialCapital;
+  const profitPercent = ((profit / initialCapital) * 100).toFixed(2);
+  const isProfit = profit >= 0;
 
   return (
     <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-xl flex flex-col h-full">
@@ -49,10 +53,17 @@ export const PortfolioChart: React.FC = () => {
           </PieChart>
         </ResponsiveContainer>
         
+        {/* PnL Central */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
            <div className="text-center">
-              <div className="text-xs text-slate-500 font-bold uppercase">Net Worth</div>
-              <div className="text-white font-black text-lg">${(totalValue/1000).toFixed(1)}k</div>
+              <div className="text-[10px] text-slate-500 font-bold uppercase">PnL Total</div>
+              <div className={`text-lg font-black flex items-center justify-center gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                 {isProfit ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
+                 {isProfit ? '+' : ''}{profitPercent}%
+              </div>
+              <div className="text-xs text-slate-400 font-mono">
+                 ${Math.abs(profit).toLocaleString(undefined, {maximumFractionDigits:0})}
+              </div>
            </div>
         </div>
       </div>

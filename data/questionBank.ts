@@ -1,151 +1,89 @@
-
 import { QuizQuestion } from '../types';
 
 export interface BankQuestion extends QuizQuestion {
-  tags: string[]; // e.g., ['#risk', '#crypto', '#psychology']
+  tags: string[]; 
 }
 
 export const QUESTION_BANK: BankQuestion[] = [
-  // --- GENERAL / BASICS ---
+  // --- BASICS ---
   {
     type: 'true_false',
-    question: "¿Es posible perder más dinero del que invertiste al comprar una acción normal (sin apalancamiento)?",
+    question: "¿Es posible perder más dinero del que invertiste en acciones spot?",
     options: ["Verdadero", "Falso"],
     correctIndex: 1,
     correctAnswerText: "Falso",
     difficulty: "easy",
-    explanation: "Con acciones al contado (spot), lo máximo que puedes perder es el 100% de tu inversión si la empresa quiebra (precio = 0).",
-    tags: ['#basics', '#risk', '#stocks'],
-    pedagogicalGoal: "Responsabilidad Limitada"
+    explanation: "En spot, el límite es 0.",
+    tags: ['#basics', '#risk', '#stocks']
   },
+  
+  // --- NEW: FUNDAMENTAL ANALYSIS ---
   {
     type: 'multiple_choice',
-    question: "¿Qué significa 'Diversificar' tu portafolio?",
-    options: ["Comprar muchas criptomonedas diferentes", "Invertir todo en la empresa más segura", "Repartir el capital entre distintos tipos de activos (Acciones, Bonos, Real Estate)", "Tener cuentas en varios bancos"],
-    correctIndex: 2,
-    correctAnswerText: "Repartir el capital entre distintos tipos de activos (Acciones, Bonos, Real Estate)",
-    difficulty: "easy",
-    explanation: "Diversificar reduce el riesgo sistémico. Si un sector cae, otros pueden subir, equilibrando tu cuenta.",
-    tags: ['#basics', '#strategy', '#risk'],
-    pedagogicalGoal: "Gestión de Riesgo"
-  },
-
-  // --- TECHNICAL ANALYSIS ---
-  {
-    type: 'multiple_choice',
-    question: "Si el RSI (Índice de Fuerza Relativa) está por encima de 70, ¿qué suele indicar?",
-    options: ["El activo está Sobrecomprado (caro)", "El activo está Sobrevendido (barato)", "El volumen es bajo", "Es momento de comprar fuerte"],
-    correctIndex: 0,
-    correctAnswerText: "El activo está Sobrecomprado (caro)",
-    difficulty: "medium",
-    explanation: "Un RSI > 70 sugiere que el precio ha subido muy rápido y podría corregir (bajar) pronto.",
-    tags: ['#technical', '#indicators', '#rsi'],
-    pedagogicalGoal: "Lectura de Indicadores"
-  },
-  {
-    type: 'candle_chart',
-    question: "Ves una vela con una 'mecha' inferior muy larga después de una caída. ¿Qué sugiere?",
-    chartData: { trend: 'doji_reversal', indicatorHint: "Rechazo de precios bajos" },
-    options: ["SUBIRÁ (Martillo)", "BAJARÁ (Continuación)"],
-    correctIndex: 0,
-    correctAnswerText: "SUBIRÁ (Martillo)",
-    difficulty: "medium",
-    explanation: "Una mecha larga abajo significa que los vendedores intentaron bajar el precio, pero los compradores lo empujaron de vuelta arriba (Fuerza alcista).",
-    tags: ['#technical', '#candles', '#patterns'],
-    pedagogicalGoal: "Price Action"
-  },
-  {
-    type: 'binary_prediction',
-    question: "El precio rompe una resistencia clave de $100 pero con MUY POCO volumen. ¿Qué haces?",
-    options: ["Comprar ruptura", "Esperar / No operar"],
+    question: "¿Qué ratio indica si una acción está barata respecto a sus beneficios?",
+    options: ["RSI", "PER (Price to Earnings)", "MACD"],
     correctIndex: 1,
-    correctAnswerText: "Esperar / No operar",
-    difficulty: "hard",
-    explanation: "Una ruptura sin volumen suele ser una 'Trampa de Toros' (False Breakout). Es probable que el precio vuelva a caer.",
-    tags: ['#technical', '#volume', '#strategy'],
-    pedagogicalGoal: "Confirmación de Tendencia"
-  },
-
-  // --- CRYPTO SPECIFIC ---
-  {
-    type: 'true_false',
-    question: "¿Bitcoin es completamente anónimo?",
-    options: ["Verdadero", "Falso"],
-    correctIndex: 1,
-    correctAnswerText: "Falso",
+    correctAnswerText: "PER (Price to Earnings)",
     difficulty: "medium",
-    explanation: "Bitcoin es pseudónimo. Todas las transacciones son públicas en la Blockchain. Si alguien vincula tu wallet a tu identidad, puede ver todo tu historial.",
-    tags: ['#crypto', '#privacy', '#bitcoin'],
-    pedagogicalGoal: "Mitos de Cripto"
-  },
-  {
-    type: 'ordering',
-    question: "Ordena por Capitalización de Mercado (histórica general):",
-    correctOrder: ["Bitcoin (BTC)", "Ethereum (ETH)", "Solana (SOL)", "Pepe (Meme)"],
-    difficulty: "medium",
-    explanation: "Bitcoin es el rey, seguido por Ethereum. Las Altcoins y Memecoins suelen tener valoraciones mucho menores.",
-    tags: ['#crypto', '#marketcap'],
-    pedagogicalGoal: "Jerarquía del Mercado"
+    explanation: "PER bajo = potencialmente barata.",
+    tags: ['#fundamental', '#stocks', '#valuation']
   },
   {
     type: 'matching',
-    question: "Conecta el concepto con su función:",
+    question: "Relaciona conceptos contables:",
     pairs: [
-      { left: "Mineros", right: "Seguridad y Validación" },
-      { left: "Nodos", right: "Historial y Propagación" },
-      { left: "Devs", right: "Mejora del Código" }
+      { left: "Activo", right: "Posees" },
+      { left: "Pasivo", right: "Debes" },
+      { left: "Patrimonio", right: "Valor Neto" }
     ],
+    difficulty: "medium",
+    explanation: "Ecuación contable básica.",
+    tags: ['#fundamental', '#accounting']
+  },
+
+  // --- NEW: TECHNICAL ANALYSIS ---
+  {
+    type: 'binary_prediction',
+    question: "El precio rebota en una línea de tendencia alcista. ¿Qué haces?",
+    options: ["Comprar", "Vender"],
+    correctIndex: 0,
+    correctAnswerText: "Comprar",
+    difficulty: "medium",
+    explanation: "La tendencia es tu amiga.",
+    tags: ['#technical', '#trend']
+  },
+
+  // --- NEW: CRYPTO ADVANCED ---
+  {
+    type: 'multiple_choice',
+    question: "¿Qué es una Layer 2 (Capa 2)?",
+    options: ["Una estafa", "Solución de escalado (rápida/barata)", "Un nuevo Bitcoin"],
+    correctIndex: 1,
+    correctAnswerText: "Solución de escalado (rápida/barata)",
     difficulty: "hard",
-    explanation: "Los mineros gastan energía para asegurar la red, los nodos guardan la copia de la blockchain y los desarrolladores proponen mejoras.",
-    tags: ['#crypto', '#tech', '#bitcoin'],
-    pedagogicalGoal: "Ecosistema Blockchain"
+    explanation: "Ayudan a Ethereum a ser usable.",
+    tags: ['#crypto', '#tech', '#ethereum']
   },
   {
     type: 'sentiment_swipe',
-    question: "Analiza estas noticias para Ethereum:",
+    question: "Analiza sentimiento cripto:",
     sentimentCards: [
-      { text: "La actualización reduce gas fees un 90%", sentiment: "bullish" },
-      { text: "Hackeo en un puente de la red", sentiment: "bearish" },
-      { text: "Blackrock solicita ETF de ETH", sentiment: "bullish" }
+      { text: "EEUU aprueba ETF de Bitcoin", sentiment: "bullish" },
+      { text: "Binance sufre hackeo masivo", sentiment: "bearish" },
+      { text: "Inflación baja, FED baja tipos", sentiment: "bullish" }
     ],
     difficulty: "medium",
-    explanation: "Mejoras tecnológicas e interés institucional son positivos. Hackeos y fallos de seguridad son negativos.",
-    tags: ['#crypto', '#ethereum', '#news'],
-    pedagogicalGoal: "Análisis Fundamental Cripto"
+    explanation: "Adopción institucional y macroeconomía afectan mucho.",
+    tags: ['#crypto', '#news']
   },
 
-  // --- PSYCHOLOGY & STRATEGY ---
+  // --- PSYCHOLOGY ---
   {
     type: 'risk_slider',
-    question: "Acabas de perder 3 operaciones seguidas. ¿Cuánto deberías arriesgar en la siguiente?",
-    riskScenario: { correctValue: 10, tolerance: 10, minLabel: "Mínimo (Proteger)", maxLabel: "Doble o Nada" },
+    question: "El mercado cae un 50% (Bear Market). Tienes cash. ¿Nivel de compra?",
+    riskScenario: { correctValue: 80, tolerance: 20, minLabel: "Vender", maxLabel: "Comprar Fuerte" },
     difficulty: "hard",
-    explanation: "Cuando estás en racha perdedora (Tilt), debes REDUCIR el riesgo drásticamente o dejar de operar para proteger tu capital emocional y financiero.",
-    tags: ['#psychology', '#risk', '#strategy'],
-    pedagogicalGoal: "Gestión Emocional"
-  },
-  {
-    type: 'multiple_choice',
-    question: "¿Qué es el FOMO?",
-    options: ["Fear Of Missing Out (Miedo a perderse algo)", "Fear Of Money Over (Miedo a perder dinero)", "Future Of Market Operations", "Ninguna"],
-    correctIndex: 0,
-    correctAnswerText: "Fear Of Missing Out (Miedo a perderse algo)",
-    difficulty: "easy",
-    explanation: "Es la emoción que te hace comprar cuando todo sube verticalmente, generalmente justo antes de que caiga.",
-    tags: ['#psychology', '#acronyms'],
-    pedagogicalGoal: "Psicología de Masas"
-  },
-
-  // --- MACRO ---
-  {
-    type: 'binary_prediction',
-    question: "La inflación sube al 10%. ¿Qué suele pasar con el poder adquisitivo de tus ahorros en efectivo?",
-    options: ["Aumenta", "Disminuye"],
-    correctIndex: 1,
-    correctAnswerText: "Disminuye",
-    difficulty: "easy",
-    explanation: "La inflación erosiona el valor del dinero fiat. Necesitas invertir para al menos mantener tu poder de compra.",
-    tags: ['#macro', '#basics'],
-    pedagogicalGoal: "Economía Básica"
+    explanation: "Compra cuando haya sangre en las calles.",
+    tags: ['#psychology', '#strategy']
   }
 ];
