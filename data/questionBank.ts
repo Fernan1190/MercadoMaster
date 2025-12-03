@@ -86,4 +86,15 @@ export const QUESTION_BANK: BankQuestion[] = [
     explanation: "Compra cuando haya sangre en las calles.",
     tags: ['#psychology', '#strategy']
   }
+
+  {
+    type: 'cloze',
+    question: "Completa la definición:",
+    clozeText: "El {0} mide cuánto tarda una inversión en recuperar su coste.",
+    clozeOptions: ["PER", "RSI", "Volumen", "ROI"],
+    correctAnswerText: "PER", // Debe coincidir exactamente con una opción
+    difficulty: "medium",
+    explanation: "El Price-to-Earnings Ratio indica los años necesarios para recuperar la inversión vía beneficios.",
+    tags: ['#fundamental', '#stocks']
+  }
 ];

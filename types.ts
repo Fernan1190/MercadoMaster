@@ -3,7 +3,7 @@ export interface UserStats {
   level: number;
   league: 'Bronze' | 'Silver' | 'Gold' | 'Diamond' | 'Master';
   streak: number;
-  balance: number; 
+  balance: number;
   hearts: number;
   maxHearts: number;
   portfolio: { [symbol: string]: number };
@@ -12,6 +12,10 @@ export interface UserStats {
   masterCoins: number;
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
+  
+  // --- NUEVO: NOTAS POR LECCIÓN ---
+  lessonNotes: { [lessonId: string]: string }; 
+  
   pathProgress: {
     [key in PathId]?: number;
   };
@@ -28,21 +32,11 @@ export interface UserStats {
   openedChests: string[];
   
   theme: 'default' | 'cyberpunk' | 'terminal';
-  unlockedThemes: string[]; // <--- NUEVO CAMPO
+  unlockedThemes: string[];
   prestige: number;
   stakedCoins: number;
   minedCoins: number;
-  quickNotes: string;
-}
-
-// ... (Resto del archivo igual: Transaction, PathId, Unit, etc.)
-export interface Transaction {
-  id: string;
-  type: 'buy' | 'sell';
-  symbol: string;
-  amount: number;
-  price: number;
-  timestamp: string;
+  quickNotes: string; // Notas globales (Dashboard)
 }
 
 export enum PathId {
@@ -68,7 +62,8 @@ export interface LearningPath {
   units: Unit[];
 }
 
-export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'binary_prediction' | 'candle_chart' | 'word_construction' | 'risk_slider' | 'portfolio_balancing' | 'sentiment_swipe' | 'chart_point';
+// --- AÑADIDO 'cloze' ---
+export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'binary_prediction' | 'candle_chart' | 'word_construction' | 'risk_slider' | 'portfolio_balancing' | 'sentiment_swipe' | 'chart_point' | 'cloze';
 
 export interface QuizQuestion {
   type: QuestionType;
@@ -77,21 +72,28 @@ export interface QuizQuestion {
   pedagogicalGoal?: string;
   bloomLevel?: 'remember' | 'understand' | 'apply' | 'analyze';
   scenarioContext?: string;
-  options?: string[];
+
+  options?: string[]; 
   correctIndex?: number;
   correctAnswerText?: string;
-  pairs?: { left: string; right: string }[];
-  correctOrder?: string[];
-  chartData?: { 
-    trend: 'up' | 'down' | 'volatile' | 'doji_reversal';
-    indicatorHint?: string; 
-  };
-  sentenceParts?: string[];
+  pairs?: { left: string; right: string }[]; 
+  correctOrder?: string[]; 
+  chartData?: { trend: 'up' | 'down' | 'volatile' | 'doji_reversal'; indicatorHint?: string; }; 
+  sentenceParts?: string[]; 
   riskScenario?: { correctValue: number; tolerance: number; minLabel: string; maxLabel: string };
-  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[];
-  portfolioTargetRisk?: number;
+  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[]; 
+  portfolioTargetRisk?: number; 
   sentimentCards?: { text: string; sentiment: 'bullish' | 'bearish' }[];
   chartPointConfig?: { entryPrice: number; trend: 'up' | 'down'; idealStopLoss: number };
+
+  // --- NUEVO PARA CLOZE ---
+  // Ejemplo: "El {0} mide la rentabilidad."
+  clozeText?: string; 
+  // Opciones para rellenar: ["PER", "RSI"]
+  clozeOptions?: string[]; 
+  // Respuesta correcta: "PER"
+  correctClozeAnswer?: string; 
+
   explanation: string;
   relatedSlideIndex?: number;
 }

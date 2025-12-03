@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Añadido useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { useGame } from '../context/GameContext'; 
 import { XCircle, Timer, Heart } from 'lucide-react';
 import { PathId, LessonContent, Unit, LearningPath, GameMode } from '../types';
@@ -43,6 +43,7 @@ type LessonPhase = 'intro' | 'theory' | 'quiz' | 'outro';
 
 export const Learn: React.FC = () => {
   const { stats, actions } = useGame();
+  // Extraemos 'openChest' del contexto
   const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest, playSound } = actions;
 
   const [selectedPathId, setSelectedPathId] = useState<PathId | null>(null);
@@ -225,7 +226,7 @@ export const Learn: React.FC = () => {
      setShowFeedback(true);
      setShake(true);
      deductHeart();
-  }, [deductHeart]); // Añadido useCallback para evitar re-creación
+  }, [deductHeart]);
 
   const handleExplainAgain = async () => {
       if (!activeLesson) return;
@@ -322,6 +323,11 @@ export const Learn: React.FC = () => {
     else if (q.type === 'sentiment_swipe') {
         correct = sentimentState.correctCount >= (q.sentimentCards?.length || 0) * 0.8; 
     }
+    else if (q.type === 'cloze') {
+        if (selectedOption !== null && q.clozeOptions && q.correctAnswerText) {
+            correct = q.clozeOptions[selectedOption] === q.correctAnswerText;
+        }
+    }
     else {
         const indexMatch = selectedOption === q.correctIndex;
         let textMatch = false;
@@ -370,7 +376,6 @@ export const Learn: React.FC = () => {
     }
   }, [activeLesson, currentQuestionIndex, gameMode, playSound, stats.hearts]);
 
-  // --- CORRECCIÓN DEL ERROR #301 ---
   const q = activeLesson?.quiz[currentQuestionIndex];
   const isMinigameBroken = q && (
       (q.type === 'portfolio_balancing' && !q.portfolioAssets) || 
@@ -378,14 +383,12 @@ export const Learn: React.FC = () => {
       (q.type === 'matching' && !q.pairs)
   );
 
-  // Usamos useEffect para realizar el "skip" después del renderizado
   useEffect(() => {
     if (isMinigameBroken) {
         const timer = setTimeout(() => nextQuestion(), 100);
         return () => clearTimeout(timer);
     }
   }, [isMinigameBroken, nextQuestion]);
-  // ----------------------------------
 
   const closeLesson = () => {
     if (!selectedPathId) return;
@@ -423,6 +426,7 @@ export const Learn: React.FC = () => {
            onStartGameMode={handleStartGameMode}
            onUpdateStats={updateStats}
            playSound={playSound}
+           // CORRECCIÓN: usamos 'openChest' (la variable del contexto)
            onOpenChest={openChest} 
         />
      );
@@ -548,6 +552,46 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
+                {/* --- CLOZE (Rellenar Huecos) --- */}
+                {q.type === 'cloze' && q.clozeText && q.clozeOptions && (
+                    <div className="flex flex-col gap-8">
+                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-700 text-xl md:text-2xl font-medium leading-relaxed text-center">
+                            {q.clozeText.split('{0}').map((part, i) => (
+                                <React.Fragment key={i}>
+                                    {part}
+                                    {i < q.clozeText!.split('{0}').length - 1 && (
+                                        <span className={`inline-block min-w-[100px] px-3 py-1 mx-1 rounded-lg border-b-2 border-dashed align-bottom transition-all
+                                            ${selectedOption !== null 
+                                                ? 'bg-blue-600 text-white border-blue-400' 
+                                                : 'bg-slate-800 border-slate-600 text-slate-500'}`}
+                                        >
+                                            {selectedOption !== null ? q.clozeOptions![selectedOption] : "?"}
+                                        </span>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {q.clozeOptions.map((opt, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => !showFeedback && setSelectedOption(i)}
+                                    className={`p-4 rounded-xl font-bold text-lg border-2 transition-all
+                                        ${selectedOption === i 
+                                            ? 'bg-blue-600 border-blue-400 text-white' 
+                                            : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}
+                                        ${showFeedback && q.correctAnswerText === opt ? '!bg-green-600 !border-green-400 !text-white' : ''}
+                                        ${showFeedback && selectedOption === i && q.correctAnswerText !== opt ? '!bg-red-600 !border-red-400 !text-white' : ''}
+                                    `}
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
              </div>
 
              {showFeedback ? (
@@ -560,7 +604,16 @@ export const Learn: React.FC = () => {
                  </div>
              ) : (
                  <div className="fixed bottom-0 left-0 w-full p-4 z-50 bg-slate-900/90 border-t border-slate-800">
-                     <button onClick={checkAnswer} className="w-full max-w-3xl mx-auto block py-4 rounded-2xl font-black bg-blue-600 text-white">COMPROBAR</button>
+                     <button onClick={checkAnswer} 
+                        disabled={
+                            (q.type === 'matching' && matchingState.matchedIds.length !== matchingState.shuffledItems.length) ||
+                            (q.type === 'ordering' && orderingState.pool.length > 0) ||
+                            (q.type === 'sentiment_swipe' && sentimentState.index < (q.sentimentCards?.length || 0)) ||
+                            ((q.type === 'cloze' || ['multiple_choice', 'true_false', 'binary_prediction', 'candle_chart'].includes(q.type)) && selectedOption === null)
+                        }
+                        className="w-full max-w-3xl mx-auto block py-4 rounded-2xl font-black bg-blue-600 text-white disabled:bg-slate-800 disabled:text-slate-500 transition-all">
+                        COMPROBAR
+                     </button>
                  </div>
              )}
           </div>

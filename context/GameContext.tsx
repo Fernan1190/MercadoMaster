@@ -23,12 +23,13 @@ const INITIAL_STATS: UserStats = {
   masterCoins: 350, 
   completedLessons: [],
   levelRatings: {},
+  lessonNotes: {}, // <--- Inicializado
   pathProgress: { [PathId.STOCKS]: 0, [PathId.CRYPTO]: 0 },
   inventory: { hint5050: 3, timeFreeze: 2, skip: 1, streakFreeze: 1, doubleXp: 0 },
   bookmarks: [],
   dailyQuests: INITIAL_QUESTS,
   theme: 'default',
-  unlockedThemes: ['default'], // Inicializar temas
+  unlockedThemes: ['default'],
   prestige: 0,
   stakedCoins: 0,
   minedCoins: 0,
@@ -55,6 +56,7 @@ interface GameContextType {
     buyHearts: () => boolean;
     useItem: (type: 'hint5050' | 'timeFreeze' | 'skip') => boolean;
     addBookmark: (term: string) => void;
+    saveLessonNote: (lessonId: string, note: string) => void; // <--- NUEVA ACCIÓN
     mineCoin: () => void;
     stakeCoins: () => void;
     unstakeCoins: () => void;
@@ -65,7 +67,6 @@ interface GameContextType {
     buyAsset: (symbol: string, amount: number, price: number) => boolean;
     sellAsset: (symbol: string, amount: number, price: number) => boolean;
     playSound: (type: SoundType) => void;
-    // NUEVAS ACCIONES DE TIENDA
     buyShopItem: (itemId: keyof UserStats['inventory'], cost: number) => boolean;
     buyTheme: (themeId: string, cost: number) => boolean;
     equipTheme: (themeId: any) => void;
@@ -75,7 +76,6 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
-  // 1. Cargar Estado
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('mercadoMasterStats');
     if (saved) {
@@ -85,13 +85,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         if (!parsed.transactions) parsed.transactions = [];
         if (!parsed.unlockedAchievements) parsed.unlockedAchievements = [];
         if (!parsed.unlockedThemes) parsed.unlockedThemes = ['default'];
+        if (!parsed.lessonNotes) parsed.lessonNotes = {}; // Migración segura
         return parsed;
       } catch (e) { return INITIAL_STATS; }
     }
     return INITIAL_STATS;
   });
 
-  // 2. Estado de Mercado
   const [marketState, setMarketState] = useState<MarketState>({
       prices: INITIAL_PRICES,
       history: {},
@@ -101,7 +101,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [latestAchievement, setLatestAchievement] = useState<Achievement | null>(null);
   const prevAchievementsCount = useRef(stats.unlockedAchievements.length);
 
-  // Inicialización Mercado
   useEffect(() => {
     const initialHistory: any = {};
     const initialTrend: any = {};
@@ -121,7 +120,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setMarketState({ prices: INITIAL_PRICES, history: initialHistory, trend: initialTrend });
   }, []);
 
-  // Loop Simulación
   useEffect(() => {
     const interval = setInterval(() => {
       setMarketState(prev => {
@@ -152,7 +150,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('mercadoMasterStats', JSON.stringify(stats));
   }, [stats]);
 
-  // Audio
   const playSound = useCallback((type: SoundType) => {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
@@ -174,7 +171,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Achievements Watcher
   useEffect(() => {
     if (stats.unlockedAchievements.length > prevAchievementsCount.current) {
       const lastId = stats.unlockedAchievements[stats.unlockedAchievements.length - 1];
@@ -184,7 +180,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [stats.unlockedAchievements, playSound]);
 
-  // Achievements Helper
   const calculateAchievements = (currentStats: UserStats): Partial<UserStats> => {
     const newUnlocked: string[] = [];
     let xpBonus = 0; let coinsBonus = 0;
@@ -198,8 +193,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
     return {};
   };
-
-  // --- ACCIONES ---
 
   const updateStats = useCallback((xpGained: number, pathId?: PathId, levelIncrement: number = 0, perfectRun: boolean = false) => {
     setStats(prev => {
@@ -259,7 +252,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return false;
   }, [stats.portfolio]);
 
-  // --- TIENDA ACTIONS ---
   const buyShopItem = useCallback((itemId: keyof UserStats['inventory'], cost: number) => {
      if (stats.masterCoins >= cost) {
          playSound('cash');
@@ -284,7 +276,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
               ...prev,
               masterCoins: prev.masterCoins - cost,
               unlockedThemes: [...prev.unlockedThemes, themeId],
-              theme: themeId as any // Auto-equip
+              theme: themeId as any 
           }));
           return true;
       }
@@ -299,7 +291,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       }
   }, [stats.unlockedThemes, playSound]);
 
-  // --- OTHER ACTIONS ---
+  // NUEVO: Guardar Notas de Lección
+  const saveLessonNote = useCallback((lessonId: string, note: string) => {
+      setStats(prev => ({
+          ...prev,
+          lessonNotes: { ...prev.lessonNotes, [lessonId]: note }
+      }));
+  }, []);
+
   const deductHeart = useCallback(() => { playSound('error'); setStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) })); }, [playSound]);
   const buyHearts = useCallback(() => { if (stats.masterCoins >= 300) { setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - 300, hearts: prev.maxHearts })); playSound('cash'); return true; } playSound('error'); return false; }, [stats.masterCoins, playSound]);
   const useItem = useCallback((type: 'hint5050' | 'timeFreeze' | 'skip') => { return true; }, []);
@@ -314,8 +313,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
   const contextValue = useMemo(() => ({
     stats, latestAchievement, clearAchievement, market: marketState,
-    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme }
-  }), [stats, marketState, latestAchievement, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme]);
+    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote }
+  }), [stats, marketState, latestAchievement, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote]);
 
   return (
     <GameContext.Provider value={contextValue}>
