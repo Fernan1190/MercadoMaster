@@ -77,6 +77,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Determinar Título del Imperio
+  let empireTitle = "Sótano de Trader";
+  if (stats.level >= 5) empireTitle = "Garaje Start-up";
+  if (stats.level >= 10) empireTitle = "Oficina Propia";
+  if (stats.level >= 20) empireTitle = "Penthouse Wall St.";
+  if (stats.level >= 50) empireTitle = "Base Lunar";
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto pb-24 md:pb-8 animate-fade-in relative">
       
@@ -279,6 +286,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                <div className="text-xs bg-slate-900 px-3 py-1 rounded-lg text-yellow-400 border border-yellow-500/20">Skip: {stats.inventory.skip}</div>
             </div>
         </div>
+
+        {/* TARJETA DE ACCESO A LA SEDE */}
+        <div 
+            onClick={() => setView('office')}
+            className="md:col-span-12 bg-gradient-to-r from-slate-900 to-blue-950 p-6 rounded-3xl border border-slate-800 relative overflow-hidden mb-6 group cursor-pointer hover:border-blue-500/50 transition-all"
+        >
+            <div className="absolute right-0 top-0 h-full w-1/2 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 group-hover:opacity-20 transition-opacity"></div>
+            
+            <div className="flex items-center justify-between relative z-10">
+               <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/30 group-hover:scale-110 transition-transform">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+                  </div>
+                  <div>
+                     <h2 className="text-2xl font-black text-white group-hover:text-blue-200 transition-colors">Gestionar Sede Central</h2>
+                     <p className="text-slate-400 text-sm">Nivel {stats.level} • {stats.officeItems.length} Mejoras instaladas</p>
+                  </div>
+               </div>
+               
+               <div className="hidden md:flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full text-sm font-bold text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  Entrar <ArrowUpRight size={16}/>
+               </div>
+            </div>
+        </div>
+
         </>
         )}
 

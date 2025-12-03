@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react';
-import { UserStats, PathId, DailyQuest, Transaction, Achievement, CandleData, MarketState, MarketEvent, QuizQuestion } from '../types';
+import { UserStats, PathId, DailyQuest, Transaction, Achievement, CandleData, QuizQuestion, MarketEvent, MarketState } from '../types';
 import { INITIAL_PRICES, generateNextCandle } from '../services/marketSimulator';
 import { ACHIEVEMENTS } from '../data/achievements';
-import { MARKET_EVENTS } from '../data/events'; // Importar eventos
+import { MARKET_EVENTS } from '../data/events';
 
-// ... (INITIAL_QUESTS y INITIAL_STATS se mantienen IGUAL, no los repito para ahorrar espacio, copia los anteriores) ...
 const INITIAL_QUESTS: DailyQuest[] = [
   { id: 'q1', text: 'Gana 50 XP', target: 50, progress: 0, completed: false, reward: 50, type: 'xp' },
   { id: 'q2', text: 'Completa 2 Lecciones', target: 2, progress: 0, completed: false, reward: 100, type: 'lessons' },
@@ -16,7 +15,8 @@ const INITIAL_STATS: UserStats = {
   maxHearts: 5, masterCoins: 350, completedLessons: [], levelRatings: {}, lessonNotes: {}, questionsAnswered: 0, correctAnswers: 0,
   mistakes: [], pathProgress: { [PathId.STOCKS]: 0, [PathId.CRYPTO]: 0 },
   inventory: { hint5050: 3, timeFreeze: 2, skip: 1, streakFreeze: 1, doubleXp: 0 }, bookmarks: [], dailyQuests: INITIAL_QUESTS,
-  theme: 'default', unlockedThemes: ['default'], prestige: 0, stakedCoins: 0, minedCoins: 0, quickNotes: "", openedChests: []
+  theme: 'default', unlockedThemes: ['default'], prestige: 0, stakedCoins: 0, minedCoins: 0, quickNotes: "", openedChests: [],
+  officeItems: []
 };
 
 type SoundType = 'success' | 'error' | 'cash' | 'pop' | 'levelUp' | 'click' | 'chest' | 'news';
@@ -26,7 +26,7 @@ interface GameContextType {
   latestAchievement: Achievement | null;
   clearAchievement: () => void;
   market: MarketState;
-  latestEvent: MarketEvent | null; // Para notificar a la UI
+  latestEvent: MarketEvent | null;
   clearEvent: () => void;
   actions: {
     updateStats: (xpGained: number, pathId?: PathId, levelIncrement?: number, perfectRun?: boolean) => void;
@@ -49,12 +49,14 @@ interface GameContextType {
     buyShopItem: (itemId: keyof UserStats['inventory'], cost: number) => boolean;
     buyTheme: (themeId: string, cost: number) => boolean;
     equipTheme: (themeId: any) => void;
+    buyOfficeItem: (itemId: string, cost: number) => boolean;
   };
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
+  // 1. CARGAR ESTADO
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('mercadoMasterStats');
     if (saved) {
@@ -68,13 +70,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         if (parsed.questionsAnswered === undefined) parsed.questionsAnswered = 0;
         if (parsed.correctAnswers === undefined) parsed.correctAnswers = 0;
         if (!parsed.mistakes) parsed.mistakes = [];
+        if (!parsed.officeItems) parsed.officeItems = [];
         return parsed;
       } catch (e) { return INITIAL_STATS; }
     }
     return INITIAL_STATS;
   });
 
-  // --- ESTADO DEL MERCADO CON EVENTOS ---
   const [marketState, setMarketState] = useState<MarketState>({
       prices: INITIAL_PRICES,
       history: {},
@@ -88,47 +90,15 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [latestEvent, setLatestEvent] = useState<MarketEvent | null>(null);
   const prevAchievementsCount = useRef(stats.unlockedAchievements.length);
 
-  // --- REFERENCIA DEL MERCADO (CEREBRO) ---
   const marketRef = useRef({
     prices: { ...INITIAL_PRICES },
     history: {} as { [symbol: string]: CandleData[] },
     trend: {} as { [symbol: string]: 'up' | 'down' | 'neutral' },
-    activeEvents: [] as { event: MarketEvent, ticksLeft: number }[], // Trackeamos eventos y duración
+    activeEvents: [] as { event: MarketEvent, ticksLeft: number }[],
     volatility: 0.002
   });
 
-  // Inicialización
-  useEffect(() => {
-    const initialHistory: any = {};
-    const initialTrend: any = {};
-    Object.keys(INITIAL_PRICES).forEach(symbol => {
-      // @ts-ignore
-      let currentPrice = INITIAL_PRICES[symbol];
-      const history = [];
-      for(let i=0; i<30; i++) {
-         const candle = generateNextCandle(currentPrice);
-         candle.time = `${10 + Math.floor(i/60)}:${i%60}`;
-         history.push(candle);
-         currentPrice = candle.close;
-      }
-      initialHistory[symbol] = history;
-      initialTrend[symbol] = 'neutral';
-    });
-    
-    marketRef.current.history = initialHistory;
-    marketRef.current.trend = initialTrend;
-    
-    setMarketState({ 
-        prices: INITIAL_PRICES, 
-        history: initialHistory, 
-        trend: initialTrend,
-        phase: 'accumulation',
-        activeEvents: [],
-        globalVolatility: 0.002
-    });
-  }, []);
-
-  // --- AUDIO SYSTEM ---
+  // --- AUDIO SYSTEM (MOVIDO AQUÍ ARRIBA PARA EVITAR ERROR DE INICIALIZACIÓN) ---
   const playSound = useCallback((type: SoundType) => {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
@@ -151,26 +121,43 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // --- BUCLE DE SIMULACIÓN AVANZADO (MACRO ENGINE) ---
+  // --- INICIALIZACIÓN MERCADO ---
+  useEffect(() => {
+    const initialHistory: any = {};
+    const initialTrend: any = {};
+    Object.keys(INITIAL_PRICES).forEach(symbol => {
+      // @ts-ignore
+      let currentPrice = INITIAL_PRICES[symbol];
+      const history = [];
+      for(let i=0; i<30; i++) {
+         const candle = generateNextCandle(currentPrice);
+         candle.time = `${10 + Math.floor(i/60)}:${i%60}`;
+         history.push(candle);
+         currentPrice = candle.close;
+      }
+      initialHistory[symbol] = history;
+      initialTrend[symbol] = 'neutral';
+    });
+    marketRef.current.history = initialHistory;
+    marketRef.current.trend = initialTrend;
+    setMarketState({ prices: INITIAL_PRICES, history: initialHistory, trend: initialTrend, phase: 'accumulation', activeEvents: [], globalVolatility: 0.002 });
+  }, []);
+
+  // --- BUCLE DE SIMULACIÓN (AHORA SÍ PUEDE USAR playSound) ---
   useEffect(() => {
     const interval = setInterval(() => {
-      // 1. PROCESAR EVENTOS
-      // Posibilidad aleatoria de que ocurra un evento (10% por tick)
       if (Math.random() < 0.1 && marketRef.current.activeEvents.length === 0) {
          const randomEvent = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
          marketRef.current.activeEvents.push({ event: randomEvent, ticksLeft: randomEvent.duration });
-         setLatestEvent(randomEvent); // Notificar UI
-         playSound('news'); // Sonido Breaking News
+         setLatestEvent(randomEvent);
+         playSound('news'); // <--- ESTO YA NO FALLA
       }
-
-      // Limpiar eventos caducados
+      
       marketRef.current.activeEvents = marketRef.current.activeEvents
         .map(e => ({ ...e, ticksLeft: e.ticksLeft - 1 }))
         .filter(e => e.ticksLeft > 0);
 
       const activeEventsData = marketRef.current.activeEvents.map(e => e.event);
-
-      // 2. CALCULAR PRECIOS
       const currentState = marketRef.current;
       const newHistory: any = { ...currentState.history };
       const newPrices: any = { ...currentState.prices };
@@ -179,26 +166,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       Object.keys(currentState.prices).forEach(symbol => {
         const history = currentState.history[symbol];
         if (!history || history.length === 0) return;
-        
         const lastCandle = history[history.length - 1];
-        
-        // Calcular impacto acumulado de eventos
         let trendBias = 0;
         let volatilityMultiplier = 1;
-
+        
         marketRef.current.activeEvents.forEach(({ event }) => {
            // @ts-ignore
            if (event.impact[symbol]) trendBias += event.impact[symbol];
            volatilityMultiplier += (event.impact.volatility || 0);
         });
-
-        // Generar vela con la influencia de los eventos
-        const nextCandle = generateNextCandle(
-            lastCandle.close, 
-            0.002 * volatilityMultiplier, 
-            trendBias * 0.005 // Factor de sensibilidad
-        );
         
+        const nextCandle = generateNextCandle(lastCandle.close, 0.002 * volatilityMultiplier, trendBias * 0.005);
         // @ts-ignore
         newPrices[symbol] = nextCandle.close;
         // @ts-ignore
@@ -206,44 +184,15 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         newHistory[symbol] = [...history.slice(1), nextCandle];
       });
 
-      // 3. ACTUALIZAR REFERENCIA
-      marketRef.current = {
-        ...currentState,
-        prices: newPrices,
-        history: newHistory,
-        trend: newTrends
-      };
-
-      // 4. ACTUALIZAR UI
-      setMarketState({
-          prices: newPrices,
-          history: newHistory,
-          trend: newTrends,
-          phase: 'bull_run', // TODO: Calcular fase real
-          activeEvents: activeEventsData,
-          globalVolatility: 0.002
-      });
-
+      marketRef.current = { ...currentState, prices: newPrices, history: newHistory, trend: newTrends };
+      setMarketState({ prices: newPrices, history: newHistory, trend: newTrends, phase: 'bull_run', activeEvents: activeEventsData, globalVolatility: 0.002 });
     }, 2000);
-    
     return () => clearInterval(interval);
-  }, [playSound]); // Solo depende de playSound que es estable
+  }, [playSound]);
 
-  // ... (Persistencia, Logros, Acciones - MANTENER IGUAL QUE ANTES) ...
-  
-  // Helper y efectos de Logros se mantienen (Omitidos para brevedad, son idénticos al paso anterior)
   useEffect(() => {
     localStorage.setItem('mercadoMasterStats', JSON.stringify(stats));
   }, [stats]);
-
-  useEffect(() => {
-    if (stats.unlockedAchievements.length > prevAchievementsCount.current) {
-      const lastId = stats.unlockedAchievements[stats.unlockedAchievements.length - 1];
-      const ach = ACHIEVEMENTS.find(a => a.id === lastId);
-      if (ach) { setLatestAchievement(ach); playSound('levelUp'); }
-      prevAchievementsCount.current = stats.unlockedAchievements.length;
-    }
-  }, [stats.unlockedAchievements, playSound]);
 
   const calculateAchievements = (currentStats: UserStats): Partial<UserStats> => {
     const newUnlocked: string[] = [];
@@ -259,7 +208,16 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  // ACCIONES (Iguales que antes)
+  useEffect(() => {
+    if (stats.unlockedAchievements.length > prevAchievementsCount.current) {
+      const lastId = stats.unlockedAchievements[stats.unlockedAchievements.length - 1];
+      const ach = ACHIEVEMENTS.find(a => a.id === lastId);
+      if (ach) { setLatestAchievement(ach); playSound('levelUp'); }
+      prevAchievementsCount.current = stats.unlockedAchievements.length;
+    }
+  }, [stats.unlockedAchievements, playSound]);
+
+  // --- ACCIONES ---
   const updateStats = useCallback((xpGained: number, pathId?: PathId, levelIncrement: number = 0, perfectRun: boolean = false) => {
     setStats(prev => {
       let next = { ...prev };
@@ -281,9 +239,96 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const mineCoin = useCallback(() => { playSound('pop'); setStats(prev => { const next = { ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 }; return { ...next, ...calculateAchievements(next) }; }); }, [playSound]);
-  const buyAsset = useCallback((symbol: string, amount: number, currentPrice: number) => { const totalCost = amount * currentPrice; if (stats.balance >= totalCost) { const newTx: Transaction = { id: Date.now().toString(), type: 'buy', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() }; setStats(prev => { if (prev.balance < totalCost) return prev; const next = { ...prev, balance: prev.balance - totalCost, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) + amount }, transactions: [newTx, ...(prev.transactions || [])] }; return { ...next, ...calculateAchievements(next) }; }); return true; } return false; }, [stats.balance]);
-  const sellAsset = useCallback((symbol: string, amount: number, currentPrice: number) => { const currentQty = stats.portfolio[symbol] || 0; if (currentQty >= amount) { const totalGain = amount * currentPrice; const newTx: Transaction = { id: Date.now().toString(), type: 'sell', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() }; setStats(prev => { if ((prev.portfolio[symbol] || 0) < amount) return prev; const next = { ...prev, balance: prev.balance + totalGain, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) - amount }, transactions: [newTx, ...(prev.transactions || [])] }; return { ...next, ...calculateAchievements(next) }; }); return true; } return false; }, [stats.portfolio]);
+  const mineCoin = useCallback(() => { 
+    playSound('pop'); 
+    setStats(prev => {
+        const next = { ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 };
+        return { ...next, ...calculateAchievements(next) };
+    }); 
+  }, [playSound]);
+
+  const buyAsset = useCallback((symbol: string, amount: number, currentPrice: number) => {
+    const totalCost = amount * currentPrice;
+    if (stats.balance >= totalCost) {
+      const newTx: Transaction = { id: Date.now().toString(), type: 'buy', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() };
+      setStats(prev => {
+        if (prev.balance < totalCost) return prev;
+        const next = { ...prev, balance: prev.balance - totalCost, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) + amount }, transactions: [newTx, ...(prev.transactions || [])] };
+        return { ...next, ...calculateAchievements(next) };
+      });
+      return true; 
+    }
+    return false; 
+  }, [stats.balance]);
+
+  const sellAsset = useCallback((symbol: string, amount: number, currentPrice: number) => {
+    const currentQty = stats.portfolio[symbol] || 0;
+    if (currentQty >= amount) {
+      const totalGain = amount * currentPrice;
+      const newTx: Transaction = { id: Date.now().toString(), type: 'sell', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() };
+      setStats(prev => {
+        if ((prev.portfolio[symbol] || 0) < amount) return prev;
+        const next = { ...prev, balance: prev.balance + totalGain, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) - amount }, transactions: [newTx, ...(prev.transactions || [])] };
+        return { ...next, ...calculateAchievements(next) };
+      });
+      return true;
+    }
+    return false;
+  }, [stats.portfolio]);
+
+  const buyShopItem = useCallback((itemId: keyof UserStats['inventory'], cost: number) => {
+     if (stats.masterCoins >= cost) {
+         playSound('cash');
+         setStats(prev => {
+             const next = { 
+                 ...prev, 
+                 masterCoins: prev.masterCoins - cost,
+                 inventory: { ...prev.inventory, [itemId]: prev.inventory[itemId] + 1 }
+             };
+             return next;
+         });
+         return true;
+     }
+     playSound('error');
+     return false;
+  }, [stats.masterCoins, playSound]);
+
+  const buyTheme = useCallback((themeId: string, cost: number) => {
+      if (stats.masterCoins >= cost && !stats.unlockedThemes.includes(themeId)) {
+          playSound('cash');
+          setStats(prev => ({
+              ...prev,
+              masterCoins: prev.masterCoins - cost,
+              unlockedThemes: [...prev.unlockedThemes, themeId],
+              theme: themeId as any 
+          }));
+          return true;
+      }
+      playSound('error');
+      return false;
+  }, [stats.masterCoins, stats.unlockedThemes, playSound]);
+
+  const equipTheme = useCallback((themeId: any) => {
+      if (stats.unlockedThemes.includes(themeId)) {
+          playSound('click');
+          setStats(prev => ({ ...prev, theme: themeId }));
+      }
+  }, [stats.unlockedThemes, playSound]);
+
+  const buyOfficeItem = useCallback((itemId: string, cost: number) => {
+     if (stats.masterCoins >= cost && !stats.officeItems.includes(itemId)) {
+         playSound('cash');
+         setStats(prev => ({
+             ...prev,
+             masterCoins: prev.masterCoins - cost,
+             officeItems: [...prev.officeItems, itemId]
+         }));
+         return true;
+     }
+     playSound('error');
+     return false;
+  }, [stats.masterCoins, stats.officeItems, playSound]);
+
   const deductHeart = useCallback(() => { playSound('error'); setStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) })); }, [playSound]);
   const buyHearts = useCallback(() => { if (stats.masterCoins >= 300) { setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - 300, hearts: prev.maxHearts })); playSound('cash'); return true; } playSound('error'); return false; }, [stats.masterCoins, playSound]);
   const useItem = useCallback((type: 'hint5050' | 'timeFreeze' | 'skip') => { return true; }, []);
@@ -295,19 +340,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const updateNotes = useCallback((notes: string) => setStats(prev => ({ ...prev, quickNotes: notes })), []);
   const getThemeClass = useCallback(() => { if (stats.theme === 'cyberpunk') return 'bg-slate-950 font-mono text-cyan-400 selection:bg-pink-500'; if (stats.theme === 'terminal') return 'bg-black font-mono text-green-500 selection:bg-green-700'; return 'bg-slate-950 text-slate-100 font-sans selection:bg-green-500 selection:text-slate-900'; }, [stats.theme]);
   const clearAchievement = useCallback(() => setLatestAchievement(null), []);
-  const buyShopItem = useCallback((itemId: keyof UserStats['inventory'], cost: number) => { if (stats.masterCoins >= cost) { playSound('cash'); setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - cost, inventory: { ...prev.inventory, [itemId]: prev.inventory[itemId] + 1 } })); return true; } playSound('error'); return false; }, [stats.masterCoins, playSound]);
-  const buyTheme = useCallback((themeId: string, cost: number) => { if (stats.masterCoins >= cost && !stats.unlockedThemes.includes(themeId)) { playSound('cash'); setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - cost, unlockedThemes: [...prev.unlockedThemes, themeId], theme: themeId as any })); return true; } playSound('error'); return false; }, [stats.masterCoins, stats.unlockedThemes, playSound]);
-  const equipTheme = useCallback((themeId: any) => { if (stats.unlockedThemes.includes(themeId)) { playSound('click'); setStats(prev => ({ ...prev, theme: themeId })); } }, [stats.unlockedThemes, playSound]);
+  const clearEvent = useCallback(() => setLatestEvent(null), []);
   const recordAnswer = useCallback((isCorrect: boolean, question: QuizQuestion) => { setStats(prev => { const next = { ...prev }; next.questionsAnswered = (prev.questionsAnswered || 0) + 1; if (isCorrect) { next.correctAnswers = (prev.correctAnswers || 0) + 1; } else { const alreadyExists = prev.mistakes?.some(m => m.question === question.question); if (!alreadyExists) { next.mistakes = [...(prev.mistakes || []), question]; } } return { ...next, ...calculateAchievements(next) }; }); }, []);
   const saveLessonNote = useCallback((lessonId: string, note: string) => { setStats(prev => ({ ...prev, lessonNotes: { ...prev.lessonNotes, [lessonId]: note } })); }, []);
-  
-  // NEW: Clear Event
-  const clearEvent = useCallback(() => setLatestEvent(null), []);
 
   const contextValue = useMemo(() => ({
     stats, latestAchievement, clearAchievement, market: marketState, latestEvent, clearEvent,
-    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer }
-  }), [stats, marketState, latestAchievement, latestEvent, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer, clearEvent]);
+    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer, buyOfficeItem }
+  }), [stats, marketState, latestAchievement, latestEvent, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer, buyOfficeItem, clearEvent]);
 
   return (
     <GameContext.Provider value={contextValue}>

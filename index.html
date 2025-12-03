@@ -61,6 +61,98 @@
           50% { transform: translateY(-10px); }
        }
 
+       /* Animaciones para OfficeVisual */
+       @keyframes type-left {
+          0%, 100% { transform: rotate(30deg) translateY(0); }
+          50% { transform: rotate(35deg) translateY(-2px); }
+       }
+      @keyframes type-right {
+          0%, 100% { transform: rotate(-30deg) translateY(0); }
+          50% { transform: rotate(-35deg) translateY(-2px); }
+       }
+      @keyframes head-bob {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(2px); }
+       }
+      @keyframes blink {
+          0%, 90%, 100% { transform: scaleY(1); }
+          95% { transform: scaleY(0.1); }
+       }
+      @keyframes sway {
+          0%, 100% { transform: rotate(-2deg); }
+          50% { transform: rotate(2deg); }
+       }
+      @keyframes scan {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+       }
+
+      /* --- ANIMACIONES DEL IMPERIO --- */
+
+      /* Luz del Monitor (Resplandor) */
+      @keyframes monitor-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.5); border-color: rgba(59, 130, 246, 1); }
+      }
+
+      /* Tecleo Frenético */
+      @keyframes type-fast {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(2px) rotate(-5deg); }
+      75% { transform: translateY(2px) rotate(5deg); }
+      }
+
+      /* Respiración del Personaje */
+      @keyframes breathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(1.02); }
+      }
+
+      /* Flotar (Gravedad Cero) */
+      @keyframes float-space {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      33% { transform: translateY(-15px) rotate(2deg); }
+      66% { transform: translateY(-5px) rotate(-2deg); }
+      }
+
+      /* Holograma */
+      @keyframes hologram {
+      0% { opacity: 0.8; transform: scaleY(1); }
+      10% { opacity: 0.6; transform: scaleY(0.98); }
+      20% { opacity: 0.9; }
+      30% { opacity: 0.5; }
+      50% { opacity: 0.9; transform: scaleY(1.02); }
+      100% { opacity: 0.8; transform: scaleY(1); }
+      }
+
+      /* Matriz de Código (Fondo) */
+      @keyframes matrix-fall {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 0% 100%; }
+      }
+
+      /* Parpadeo de Luz (Sótano) */
+      @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+      52% { opacity: 0.2; }
+      54% { opacity: 1; }
+      }
+
+      /* Clases de utilidad 3D simulada */
+      .iso-card {
+      transform: perspective(1000px) rotateX(10deg);
+      transform-style: preserve-3d;
+      }
+
+      .animate-type-left { animation: type-left 0.2s infinite; }
+      .animate-type-right { animation: type-right 0.2s infinite reverse; }
+      .animate-head-bob { animation: head-bob 2s infinite ease-in-out; }
+      .animate-blink { animation: blink 4s infinite; }
+      .animate-sway { animation: sway 3s infinite ease-in-out; }
+      .animate-scan { animation: scan 2s linear infinite; }
+      .animate-bounce-subtle { animation: float 3s infinite ease-in-out; }
+
        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
        .animate-unlock { animation: unlockPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }

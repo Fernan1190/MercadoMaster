@@ -12,10 +12,13 @@ export interface UserStats {
   masterCoins: number;
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
-  lessonNotes: { [lessonId: string]: string };
-  questionsAnswered: number;
-  correctAnswers: number;
-  mistakes: QuizQuestion[];
+  
+  // MAESTRÍA
+  lessonNotes: { [lessonId: string]: string }; 
+  questionsAnswered: number; 
+  correctAnswers: number;    
+  mistakes: QuizQuestion[]; 
+
   pathProgress: { [key in PathId]?: number };
   inventory: {
     hint5050: number;
@@ -28,48 +31,24 @@ export interface UserStats {
   dailyQuests: DailyQuest[];
   lastLogin?: string;
   openedChests: string[];
+  
   theme: 'default' | 'cyberpunk' | 'terminal';
   unlockedThemes: string[];
   prestige: number;
   stakedCoins: number;
   minedCoins: number;
   quickNotes: string;
+  
+  // --- NUEVO: EL IMPERIO ---
+  officeItems: string[]; // IDs de items comprados (ej: 'plant', 'cat')
 }
 
-export interface Transaction {
-  id: string;
-  type: 'buy' | 'sell';
-  symbol: string;
-  amount: number;
-  price: number;
-  timestamp: string;
-}
-
-export enum PathId {
-  STOCKS = 'stocks',
-  CRYPTO = 'crypto'
-}
-
-export interface Unit {
-  id: string;
-  title: string;
-  description: string;
-  color: string;
-  totalLevels: number;
-  biome?: 'neon' | 'forest' | 'ocean' | 'volcano' | 'space';
-}
-
-export interface LearningPath {
-  id: PathId;
-  title: string;
-  description: string;
-  icon: string;
-  themeColor: string;
-  units: Unit[];
-}
-
+// ... (Resto de tipos se mantienen igual)
+export interface Transaction { id: string; type: 'buy' | 'sell'; symbol: string; amount: number; price: number; timestamp: string; }
+export enum PathId { STOCKS = 'stocks', CRYPTO = 'crypto' }
+export interface Unit { id: string; title: string; description: string; color: string; totalLevels: number; biome?: 'neon' | 'forest' | 'ocean' | 'volcano' | 'space'; }
+export interface LearningPath { id: PathId; title: string; description: string; icon: string; themeColor: string; units: Unit[]; }
 export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'binary_prediction' | 'candle_chart' | 'word_construction' | 'risk_slider' | 'portfolio_balancing' | 'sentiment_swipe' | 'chart_point' | 'cloze';
-
 export interface QuizQuestion {
   type: QuestionType;
   question: string;
@@ -95,32 +74,8 @@ export interface QuizQuestion {
   explanation: string;
   relatedSlideIndex?: number;
 }
-
-export interface TheorySlide {
-  title: string;
-  content: string;
-  simplifiedContent?: string;
-  analogy: string;
-  realWorldExample?: string;
-  icon: string;
-  visualType?: 'chart_line' | 'chart_candle' | 'chart_volume' | 'diagram_flow' | 'none';
-  visualMeta?: { trend?: 'up' | 'down' | 'volatile' | 'flat'; showIndicators?: boolean; label?: string; };
-  keyTerms?: string[];
-  deepDive?: { title: string; content: string };
-  commonPitfall?: string;
-  proTip?: string;
-  checkpointQuestion?: { question: string; answer: boolean };
-}
-
-export interface LessonContent {
-  id?: string;
-  title: string;
-  isBossLevel: boolean;
-  slides: TheorySlide[];
-  quiz: QuizQuestion[];
-  generatedBy?: 'ai' | 'fallback' | 'static';
-}
-
+export interface TheorySlide { title: string; content: string; simplifiedContent?: string; analogy: string; realWorldExample?: string; icon: string; visualType?: 'chart_line' | 'chart_candle' | 'chart_volume' | 'diagram_flow' | 'none'; visualMeta?: { trend?: 'up' | 'down' | 'volatile' | 'flat'; showIndicators?: boolean; label?: string; }; keyTerms?: string[]; deepDive?: { title: string; content: string }; commonPitfall?: string; proTip?: string; checkpointQuestion?: { question: string; answer: boolean }; }
+export interface LessonContent { id?: string; title: string; isBossLevel: boolean; slides: TheorySlide[]; quiz: QuizQuestion[]; generatedBy?: 'ai' | 'fallback' | 'static'; }
 export interface ChatMessage { role: 'user' | 'model'; text: string; }
 export interface MarketData { time: string; price: number; }
 export interface OHLCData { time: number; open: number; high: number; low: number; close: number; volume: number; }
@@ -133,32 +88,6 @@ export type AIPersona = 'standard' | 'warren' | 'wolf' | 'socrates';
 export interface SimSettings { leverage: number; showRSI: boolean; showSMA: boolean; }
 export interface Asset { symbol: string; name: string; price: number; change24h: number; type: 'crypto' | 'stock'; }
 export interface CandleData { time: string; open: number; high: number; low: number; close: number; }
-
-// --- NUEVOS TIPOS PARA EL MOTOR MACRO ---
 export type MarketPhase = 'accumulation' | 'bull_run' | 'distribution' | 'bear_market' | 'crash';
-
-export interface MarketEvent {
-  id: string;
-  title: string;
-  description: string;
-  type: 'news' | 'macro' | 'black_swan';
-  impact: {
-    BTC?: number; 
-    ETH?: number;
-    SOL?: number;
-    AAPL?: number;
-    TSLA?: number;
-    volatility: number;
-  };
-  duration: number; 
-  icon: string;
-}
-
-export interface MarketState {
-    prices: { [symbol: string]: number };
-    history: { [symbol: string]: CandleData[] }; 
-    trend: { [symbol: string]: 'up' | 'down' | 'neutral' };
-    phase: MarketPhase;
-    activeEvents: MarketEvent[];
-    globalVolatility: number;
-}
+export interface MarketEvent { id: string; title: string; description: string; type: 'news' | 'macro' | 'black_swan'; impact: { BTC?: number; ETH?: number; SOL?: number; AAPL?: number; TSLA?: number; volatility: number; }; duration: number; icon: string; }
+export interface MarketState { prices: { [symbol: string]: number }; history: { [symbol: string]: CandleData[] }; trend: { [symbol: string]: 'up' | 'down' | 'neutral' }; phase: MarketPhase; activeEvents: MarketEvent[]; globalVolatility: number; }

@@ -43,7 +43,7 @@ type LessonPhase = 'intro' | 'theory' | 'quiz' | 'outro';
 
 export const Learn: React.FC = () => {
   const { stats, actions } = useGame();
-  // Importante: Extraemos recordAnswer para la maestría
+  // Extraemos 'openChest' y 'playSound' y 'recordAnswer' del contexto
   const { updateStats, deductHeart, buyHearts, useItem, addBookmark, openChest, playSound, recordAnswer } = actions;
 
   const [selectedPathId, setSelectedPathId] = useState<PathId | null>(null);
@@ -294,7 +294,7 @@ export const Learn: React.FC = () => {
 
     let correct = false;
 
-    // 1. Lógica de validación por tipo de pregunta
+    // Lógica de validación
     if (q.type === 'matching') {
         correct = matchingState.matchedIds.length === matchingState.shuffledItems.length;
     } 
@@ -324,13 +324,11 @@ export const Learn: React.FC = () => {
     else if (q.type === 'sentiment_swipe') {
         correct = sentimentState.correctCount >= (q.sentimentCards?.length || 0) * 0.8; 
     }
-    // Validar "Rellenar Huecos"
     else if (q.type === 'cloze') {
         if (selectedOption !== null && q.clozeOptions && q.correctAnswerText) {
             correct = q.clozeOptions[selectedOption] === q.correctAnswerText;
         }
     }
-    // Default (Multiple Choice / True False)
     else {
         const indexMatch = selectedOption === q.correctIndex;
         let textMatch = false;
@@ -342,10 +340,10 @@ export const Learn: React.FC = () => {
         correct = indexMatch || textMatch;
     }
 
-    // 2. MAESTRÍA: Registrar respuesta en el perfil
+    // 2. MAESTRÍA: Registrar respuesta
     recordAnswer(correct, q);
 
-    // 3. Feedback visual y sonoro
+    // 3. Feedback
     setIsCorrect(correct);
     setShowFeedback(true);
     
@@ -510,7 +508,6 @@ export const Learn: React.FC = () => {
                       </div>
                 )}
 
-                {/* Candle Chart */}
                 {q.type === 'candle_chart' && (
                     <div className="flex flex-col items-center">
                         <div className="w-full h-64 bg-slate-900 rounded-2xl border border-slate-700 mb-6 flex items-center justify-center">
@@ -523,7 +520,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                {/* Matching */}
                 {q.type === 'matching' && (
                     <div className="grid grid-cols-2 gap-4">
                         {matchingState.shuffledItems.map(item => {
@@ -540,7 +536,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                 {/* Ordering */}
                  {q.type === 'ordering' && (
                     <div className="space-y-4">
                         <div className="min-h-[60px] p-4 bg-slate-900 border border-dashed border-slate-700 rounded-xl flex flex-wrap gap-2">
@@ -556,7 +551,6 @@ export const Learn: React.FC = () => {
                     </div>
                 )}
 
-                {/* Risk Slider */}
                 {q.type === 'risk_slider' && (
                     <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 text-center">
                         <div className="text-4xl font-black mb-4 text-white">{riskSliderValue}%</div>

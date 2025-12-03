@@ -4,7 +4,8 @@ import { Learn } from './components/Learn';
 import { Dashboard } from './components/Dashboard';
 import { Shop } from './components/Shop'; 
 import { Leaderboard } from './components/Leaderboard';
-import { Profile } from './components/Profile'; // <--- IMPORTAR
+import { Profile } from './components/Profile';
+import { Office } from './components/Office'; // <--- IMPORTAR
 import { AchievementPopup } from './components/AchievementPopup';
 import { GameProvider, useGame } from './context/GameContext'; 
 
@@ -26,6 +27,8 @@ const AppContent = () => {
 
   return (
     <div className={`flex h-screen overflow-hidden ${actions.getThemeClass()}`}>
+      
+      {/* FONDO ESTÁTICO LIMPIO */}
       <div className="bg-grid-pattern absolute inset-0 opacity-20 pointer-events-none"></div>
       
       <AchievementPopup achievement={latestAchievement} onClose={clearAchievement} />
@@ -34,10 +37,11 @@ const AppContent = () => {
       
       <main className="flex-1 overflow-y-auto w-full relative z-10 custom-scrollbar">
         {view === 'dashboard' && <Dashboard setView={setView} />}
+        {view === 'office' && <Office />}  {/* <--- NUEVA RUTA */}
         {view === 'learn' && <Learn />}
         {view === 'shop' && <Shop />}
         {view === 'leaderboard' && <Leaderboard />}
-        {view === 'profile' && <Profile />} {/* <--- RUTA NUEVA */}
+        {view === 'profile' && <Profile />}
       </main>
     </div>
   );
