@@ -12,14 +12,10 @@ export interface UserStats {
   masterCoins: number;
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
-  
-  // --- NUEVO: MAESTRÍA Y ESTUDIO ---
-  lessonNotes: { [lessonId: string]: string }; // Tus notas personales
-  questionsAnswered: number; // Total respondidas
-  correctAnswers: number;    // Total aciertos
-  mistakes: QuizQuestion[];  // Bóveda de errores
-  // ---------------------------------
-
+  lessonNotes: { [lessonId: string]: string };
+  questionsAnswered: number;
+  correctAnswers: number;
+  mistakes: QuizQuestion[];
   pathProgress: { [key in PathId]?: number };
   inventory: {
     hint5050: number;
@@ -32,7 +28,6 @@ export interface UserStats {
   dailyQuests: DailyQuest[];
   lastLogin?: string;
   openedChests: string[];
-  
   theme: 'default' | 'cyberpunk' | 'terminal';
   unlockedThemes: string[];
   prestige: number;
@@ -73,7 +68,6 @@ export interface LearningPath {
   units: Unit[];
 }
 
-// AÑADIDO 'cloze'
 export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'binary_prediction' | 'candle_chart' | 'word_construction' | 'risk_slider' | 'portfolio_balancing' | 'sentiment_swipe' | 'chart_point' | 'cloze';
 
 export interface QuizQuestion {
@@ -95,12 +89,9 @@ export interface QuizQuestion {
   portfolioTargetRisk?: number;
   sentimentCards?: { text: string; sentiment: 'bullish' | 'bearish' }[];
   chartPointConfig?: { entryPrice: number; trend: 'up' | 'down'; idealStopLoss: number };
-  
-  // NUEVO PARA CLOZE
-  clozeText?: string; // "El {0} mide la rentabilidad"
+  clozeText?: string;
   clozeOptions?: string[]; 
   correctClozeAnswer?: string;
-
   explanation: string;
   relatedSlideIndex?: number;
 }
@@ -142,3 +133,32 @@ export type AIPersona = 'standard' | 'warren' | 'wolf' | 'socrates';
 export interface SimSettings { leverage: number; showRSI: boolean; showSMA: boolean; }
 export interface Asset { symbol: string; name: string; price: number; change24h: number; type: 'crypto' | 'stock'; }
 export interface CandleData { time: string; open: number; high: number; low: number; close: number; }
+
+// --- NUEVOS TIPOS PARA EL MOTOR MACRO ---
+export type MarketPhase = 'accumulation' | 'bull_run' | 'distribution' | 'bear_market' | 'crash';
+
+export interface MarketEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: 'news' | 'macro' | 'black_swan';
+  impact: {
+    BTC?: number; 
+    ETH?: number;
+    SOL?: number;
+    AAPL?: number;
+    TSLA?: number;
+    volatility: number;
+  };
+  duration: number; 
+  icon: string;
+}
+
+export interface MarketState {
+    prices: { [symbol: string]: number };
+    history: { [symbol: string]: CandleData[] }; 
+    trend: { [symbol: string]: 'up' | 'down' | 'neutral' };
+    phase: MarketPhase;
+    activeEvents: MarketEvent[];
+    globalVolatility: number;
+}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext'; 
-// AQUI ESTABA EL ERROR: Me aseguro de que ArrowUpRight esté en la lista
-import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye } from 'lucide-react';
+import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, Quote, Crown, Calendar, ShoppingBag, Newspaper, Settings, Book, Edit3, EyeOff, Eye, AlertTriangle, X } from 'lucide-react';
 import { TradingTerminal } from './TradingTerminal';
 import { PortfolioChart } from './PortfolioChart'; 
 import { TransactionList } from './TransactionList'; 
@@ -31,7 +30,8 @@ const ECONOMIC_EVENTS = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { stats, actions, market } = useGame();
+  // Extraemos latestEvent y clearEvent del contexto
+  const { stats, actions, market, latestEvent, clearEvent } = useGame(); 
   const { mineCoin, stakeCoins, unstakeCoins, toggleTheme, updateNotes } = actions;
 
   const [news, setNews] = useState("Bienvenido a MercadoMaster. El mercado está abriendo...");
@@ -42,7 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const [timeLondon, setTimeLondon] = useState('');
   const [timeTokyo, setTimeTokyo] = useState('');
 
-  // Noticias dinámicas
+  // Noticias dinámicas (Tendencia)
   useEffect(() => {
     const trend = market.trend['BTC'];
     const price = market.prices['BTC'];
@@ -78,7 +78,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   }, []);
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto pb-24 md:pb-8 animate-fade-in">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto pb-24 md:pb-8 animate-fade-in relative">
+      
+      {/* --- EVENT POPUP (BREAKING NEWS) --- */}
+      {latestEvent && (
+         <div className="fixed top-24 right-6 z-50 animate-bounce-in">
+            <div className="bg-slate-900/95 backdrop-blur-xl border-l-4 border-yellow-500 p-6 rounded-r-xl shadow-2xl max-w-sm relative overflow-hidden ring-1 ring-yellow-500/20">
+               <div className="absolute inset-0 bg-yellow-500/5 animate-pulse"></div>
+               <button onClick={clearEvent} className="absolute top-2 right-2 text-slate-500 hover:text-white transition-colors p-1"><X size={16}/></button>
+               
+               <div className="flex items-start gap-4 relative z-10">
+                  <div className="p-3 bg-yellow-500/20 rounded-full text-yellow-500 text-2xl shrink-0">
+                     {latestEvent.icon}
+                  </div>
+                  <div>
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-2 py-0.5 rounded">BREAKING NEWS</span>
+                        {latestEvent.type === 'black_swan' && <span className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-500/10 px-2 py-0.5 rounded animate-pulse">ALERTA ROJA</span>}
+                     </div>
+                     <h4 className="font-black text-white text-lg leading-tight mb-2">{latestEvent.title}</h4>
+                     <p className="text-slate-300 text-sm leading-relaxed">{latestEvent.description}</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      )}
+
       <div className="flex justify-between items-end mb-8">
         <div>
            <h1 className="text-4xl font-black text-white mb-2 tracking-tight flex items-center gap-3">
@@ -124,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
         )}
 
-        {/* Continue Learning - AQUI ES DONDE SE USA ArrowUpRight */}
+        {/* Continue Learning */}
         <div onClick={() => setView('learn')} className={`${zenMode ? 'md:col-span-12 h-96' : 'md:col-span-4 row-span-2'} bg-gradient-to-br from-green-600 to-emerald-800 rounded-[2.5rem] p-8 relative overflow-hidden group cursor-pointer shadow-2xl transition-all hover:scale-[1.01] flex flex-col justify-between`}>
             <div className="absolute top-0 right-0 p-20 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors"></div>
             <div className="relative z-10">
@@ -168,41 +193,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               {ECONOMIC_EVENTS.map((ev, i) => (
                  <div key={i} className="flex justify-between items-center text-sm">
                     <span className="text-slate-400 font-mono">{ev.time}</span>
-                    <span className="text-white font-medium truncate w-24">{ev.event}</span>
+                    <span className="text-white font-medium truncate w-20">{ev.event}</span>
                     <div className={`w-2 h-2 rounded-full ${ev.impact === 'high' ? 'bg-red-500 animate-pulse' : 'bg-yellow-500'}`}></div>
                  </div>
               ))}
            </div>
         </div>
-
-        {/* Word of Day */}
-        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-12 bg-indigo-500/10 rounded-full blur-2xl"></div>
-           <h3 className="text-white font-bold flex items-center gap-2 mb-2"><Book size={20} className="text-indigo-400"/> Palabra del Día</h3>
-           <p className="text-2xl font-black text-white mb-1">{wordOfDay.term}</p>
-           <p className="text-slate-400 text-sm leading-relaxed">{wordOfDay.def}</p>
+        
+        {/* MARKET SENTIMENT */}
+        <div className="md:col-span-4 row-span-2">
+            <MarketSentiment />
         </div>
 
-        {/* TRADING SECTION */}
+        {/* TRADING TERMINAL */}
         <div className="md:col-span-8 h-[500px]">
             <TradingTerminal />
         </div>
         
+        {/* PORTFOLIO CHART */}
         <div className="md:col-span-4 h-[500px]">
             <PortfolioChart />
         </div>
 
-        {/* UTILITIES ROW */}
+        {/* TRANSACTION HISTORY */}
         <div className="md:col-span-4 h-80">
             <TransactionList />
         </div>
 
-        {/* MARKET SENTIMENT (NUEVO) */}
-        <div className="md:col-span-4 h-80">
-            <MarketSentiment />
-        </div>
-
-        {/* NOTAS RAPIDAS */}
+        {/* QUICK NOTES */}
         <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 flex flex-col">
            <h3 className="text-white font-bold flex items-center gap-2 mb-3"><Edit3 size={20} className="text-slate-400"/> Notas Rápidas</h3>
            <textarea 
@@ -214,7 +232,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
         {/* Mining Rig */}
-        <div className="md:col-span-8 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
+        <div className="md:col-span-4 h-80 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative group overflow-hidden">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-white font-bold flex items-center gap-2"><Pickaxe size={20} className="text-yellow-500"/> Minería BTC</h3>
                <span className="text-xs text-slate-500 font-mono">{stats.minedCoins} Mined</span>
@@ -244,6 +262,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </div>
         </div>
 
+        {/* Word of Day */}
+        <div className="md:col-span-4 bg-slate-900/60 backdrop-blur-md p-6 rounded-3xl border border-slate-800 relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-12 bg-indigo-500/10 rounded-full blur-2xl"></div>
+           <h3 className="text-white font-bold flex items-center gap-2 mb-2"><Book size={20} className="text-indigo-400"/> Palabra del Día</h3>
+           <p className="text-2xl font-black text-white mb-1">{wordOfDay.term}</p>
+           <p className="text-slate-400 text-sm leading-relaxed">{wordOfDay.def}</p>
+        </div>
+        
         {/* Inventory Quick Access */}
         <div className="md:col-span-12 bg-slate-800/30 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
             <span className="text-sm font-bold text-slate-400 flex items-center gap-2"><ShoppingBag size={16}/> Inventario Rápido</span>
