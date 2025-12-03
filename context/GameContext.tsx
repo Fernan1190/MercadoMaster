@@ -68,6 +68,7 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
+  // 1. Cargar Estado
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('mercadoMasterStats');
     if (saved) {
@@ -82,12 +83,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return INITIAL_STATS;
   });
 
+  // 2. Estado de Mercado
   const [marketPrices, setMarketPrices] = useState(INITIAL_PRICES);
   const [marketHistory, setMarketHistory] = useState<{ [symbol: string]: CandleData[] }>({});
   const [marketTrend, setMarketTrend] = useState<{ [symbol: string]: 'up' | 'down' | 'neutral' }>({});
   const [latestAchievement, setLatestAchievement] = useState<Achievement | null>(null);
 
-  // Inicializar historial de mercado
+  // Inicializar historial
   useEffect(() => {
     const initialHistory: any = {};
     Object.keys(INITIAL_PRICES).forEach(symbol => {
@@ -105,7 +107,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setMarketHistory(initialHistory);
   }, []);
 
-  // Simulación Global del Mercado (Sin efectos secundarios de sonido)
+  // Simulación Global (Heartbeat) - ¡YA NO AFECTA A LOS LOGROS!
   useEffect(() => {
     const interval = setInterval(() => {
       setMarketHistory(prev => {
@@ -132,11 +134,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return () => clearInterval(interval);
   }, [marketPrices]);
 
+  // Persistencia
   useEffect(() => {
     localStorage.setItem('mercadoMasterStats', JSON.stringify(stats));
   }, [stats]);
 
-  // Sistema de Audio
+  // Audio System
   const playSound = useCallback((type: SoundType) => {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
@@ -170,14 +173,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // --- SOLUCIÓN: Chequeo manual de logros (SIN useEffect) ---
+  // --- FUNCIÓN DE CONTROL DE LOGROS (MANUAL) ---
+  // Esta función verifica y devuelve los cambios, NO es un efecto automático
   const checkAchievements = (currentStats: UserStats): Partial<UserStats> => {
     const newUnlocked: string[] = [];
     let xpBonus = 0;
     let coinsBonus = 0;
 
     ACHIEVEMENTS.forEach(ach => {
-      // Si NO lo tenemos Y cumplimos la condición
       if (!currentStats.unlockedAchievements.includes(ach.id) && ach.condition(currentStats)) {
         newUnlocked.push(ach.id);
         xpBonus += 100;
@@ -186,7 +189,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (newUnlocked.length > 0) {
-      playSound('levelUp'); // ¡Sonido SOLO cuando se desbloquea uno nuevo!
+      playSound('levelUp'); // Sonido SOLO si hay nuevos
       const lastAch = ACHIEVEMENTS.find(a => a.id === newUnlocked[newUnlocked.length - 1]);
       setLatestAchievement(lastAch || null);
       
@@ -199,7 +202,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  // --- ACCIONES (Envueltas con el chequeador) ---
+  // --- ACCIONES QUE MODIFICAN ESTADO Y CHEQUEAN LOGROS ---
 
   const updateStats = (xpGained: number, pathId?: PathId, levelIncrement: number = 0, perfectRun: boolean = false) => {
     setStats(prev => {
@@ -222,7 +225,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       const newLevel = Math.floor(next.xp / 500) + 1;
       if (newLevel > next.level) next.level = newLevel;
 
-      // Chequeo logros al ganar XP
+      // Chequear logros al final
       const changes = checkAchievements(next);
       return { ...next, ...changes };
     });
@@ -232,7 +235,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     playSound('pop'); 
     setStats(prev => {
         const next = { ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 };
-        const changes = checkAchievements(next); // Chequeo logros al minar
+        const changes = checkAchievements(next); 
         return { ...next, ...changes };
     }); 
   };
@@ -248,7 +251,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) + amount },
             transactions: [newTx, ...(prev.transactions || [])]
         };
-        const changes = checkAchievements(next); // Chequeo logros al comprar
+        const changes = checkAchievements(next); // Chequear logros al comprar
         return { ...next, ...changes };
       });
       return true; 
@@ -268,7 +271,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
             portfolio: { ...prev.portfolio, [symbol]: currentQty - amount },
             transactions: [newTx, ...(prev.transactions || [])]
         };
-        const changes = checkAchievements(next); // Chequeo logros al vender
+        const changes = checkAchievements(next); // Chequear logros al vender
         return { ...next, ...changes };
       });
       return true;

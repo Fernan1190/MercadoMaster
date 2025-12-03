@@ -4,6 +4,7 @@ import { Heart, Coins, Zap, Trophy, ArrowUpRight, Globe, Pickaxe, Lock, Wallet, 
 import { TradingTerminal } from './TradingTerminal';
 import { PortfolioChart } from './PortfolioChart'; 
 import { TransactionList } from './TransactionList'; 
+import { MarketSentiment } from './MarketSentiment';
 
 interface DashboardProps {
   setView: (view: string) => void;
