@@ -7,213 +7,168 @@ interface OfficeVisualProps {
 }
 
 export const OfficeVisual: React.FC<OfficeVisualProps> = ({ level, items, league }) => {
-  // Configuración por TIER
-  let tier = 1; // Sótano
-  if (level >= 5) tier = 2; // Garaje
-  if (level >= 10) tier = 3; // Oficina
-  if (level >= 20) tier = 4; // Penthouse
-  if (level >= 50) tier = 5; // Espacio
-
-  const isSpace = tier === 5;
   
+  // Determinar Tamaño y Estilo de la Oficina
+  let roomSize = 300; // Pixels base
+  let wallColor = '#334155'; // Slate 700
+  let floorColor = '#1e293b'; // Slate 800
+  let floorPattern = 'none';
+
+  if (level >= 5) { // Garaje
+      roomSize = 400;
+      wallColor = '#52525b'; // Zinc 600
+      floorColor = '#27272a'; // Zinc 800
+      floorPattern = 'radial-gradient(circle, #3f3f46 1px, transparent 1px)';
+  }
+  if (level >= 10) { // Oficina
+      roomSize = 500;
+      wallColor = '#1e3a8a'; // Blue 900
+      floorColor = '#172554'; // Blue 950
+      floorPattern = 'checkerboard'; // Simulado luego
+  }
+  if (level >= 20) { // Penthouse
+      roomSize = 600;
+      wallColor = '#312e81'; // Indigo 900
+      floorColor = '#0f172a'; // Slate 900
+  }
+  if (level >= 50) { // Base Lunar
+      roomSize = 700;
+      wallColor = '#000000';
+      floorColor = '#111111';
+  }
+
+  // Posición central para centrar la cámara isométrica
+  const center = "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2";
+
   return (
-    <div className={`relative w-full h-full flex items-end justify-center overflow-hidden transition-colors duration-1000
-      ${tier === 1 ? 'bg-[#0f172a]' : ''}
-      ${tier === 2 ? 'bg-[#18181b]' : ''}
-      ${tier === 3 ? 'bg-slate-900' : ''}
-      ${tier === 4 ? 'bg-[#0f0518]' : ''}
-      ${tier === 5 ? 'bg-black' : ''}
-    `}>
+    <div className="relative w-full h-[500px] overflow-hidden bg-slate-950 flex items-center justify-center perspective-[2000px]">
         
-        {/* --- FONDO Y AMBIENTE --- */}
-        <div className="absolute inset-0 z-0">
+        {/* CÁMARA ISOMÉTRICA */}
+        <div className="relative w-[800px] h-[800px] transform rotate-x-[60deg] rotate-z-[-45deg] transition-all duration-1000 ease-in-out"
+             style={{ transform: 'rotateX(60deg) rotateZ(-45deg) scale(0.8)' }}>
             
-            {/* TIER 1: Sótano (Ladrillos y oscuridad) */}
-            {tier === 1 && (
-              <>
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/brick-wall.png')] opacity-10"></div>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl animate-[flicker_4s_infinite]"></div>
-                <div className="absolute top-10 right-10 w-2 h-32 bg-slate-800 rotate-12 opacity-50"></div> {/* Tubería */}
-              </>
-            )}
-
-            {/* TIER 2: Garaje (Herramientas y luz fría) */}
-            {tier === 2 && (
-               <>
-                 <div className="absolute inset-0 bg-[linear-gradient(45deg,#27272a_25%,transparent_25%,transparent_75%,#27272a_75%,#27272a),linear-gradient(45deg,#27272a_25%,transparent_25%,transparent_75%,#27272a_75%,#27272a)] [background-size:20px_20px] opacity-5"></div>
-                 <div className="absolute top-20 left-10 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px]"></div>
-               </>
-            )}
-
-            {/* TIER 3: Oficina (Ciudad de fondo) */}
-            {tier === 3 && (
-               <div className="absolute inset-0">
-                  <div className="absolute bottom-32 w-full h-64 bg-[url('https://www.transparenttextures.com/patterns/city-lights.png')] opacity-20 animate-pulse"></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
-                  <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-900/10 to-transparent"></div>
-               </div>
-            )}
-
-            {/* TIER 4: Penthouse (Lujo y Nubes) */}
-            {tier === 4 && (
-               <>
-                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/50 to-slate-900"></div>
-                  <div className="absolute top-20 -left-20 w-96 h-32 bg-purple-500/20 rounded-full blur-[80px]"></div>
-                  <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-indigo-900/20 to-transparent"></div>
-                  {/* Ventanales */}
-                  <div className="absolute inset-0 border-x-[50px] border-t-[20px] border-slate-950 opacity-80"></div>
-                  <div className="absolute top-0 left-1/3 w-2 h-full bg-slate-950/50"></div>
-                  <div className="absolute top-0 right-1/3 w-2 h-full bg-slate-950/50"></div>
-               </>
-            )}
-
-            {/* TIER 5: Base Lunar (Épico) */}
-            {tier === 5 && (
-               <>
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-50 animate-[matrix-fall_60s_linear_infinite]"></div>
-                  <div className="absolute top-10 right-10 w-48 h-48 bg-blue-400 rounded-full blur-sm shadow-[0_0_100px_rgba(59,130,246,0.5)] opacity-90"></div> {/* La Tierra */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-               </>
-            )}
-        </div>
-
-        {/* --- MESA Y SETUP (Isométrico) --- */}
-        <div className={`relative z-20 flex flex-col items-center transition-transform duration-500 ${isSpace ? 'animate-[float-space_6s_ease-in-out_infinite]' : ''}`}>
-            
-            {/* PERSONAJE */}
-            <div className="relative -mb-12 z-30 flex flex-col items-center group">
-                {/* Cabeza */}
-                <div className="w-24 h-24 bg-[#ffdbac] rounded-3xl relative shadow-xl z-20 animate-[breathe_4s_infinite_ease-in-out]">
-                    {/* Pelo */}
-                    <div className="absolute -top-3 -left-2 w-28 h-12 bg-slate-800 rounded-t-2xl shadow-md"></div>
-                    <div className="absolute top-2 -right-2 w-4 h-8 bg-slate-800 rounded-r-lg"></div>
-                    
-                    {/* Gafas (Visual de Progreso) */}
-                    {level >= 10 && (
-                       <div className="absolute top-8 left-2 w-20 h-6 bg-black/80 rounded-md border-t-2 border-white/20 backdrop-blur-sm shadow-lg flex items-center justify-center">
-                          <div className="w-full h-full bg-gradient-to-tr from-blue-500/30 to-transparent"></div>
-                       </div>
-                    )}
-
-                    {/* Cascos (Si Setup Pro) */}
-                    {items.includes('setup_pro') && (
-                        <>
-                           <div className="absolute top-4 -left-3 w-4 h-12 bg-red-500 rounded-l-lg border-r-2 border-black/20"></div>
-                           <div className="absolute top-4 -right-3 w-4 h-12 bg-red-500 rounded-r-lg border-l-2 border-black/20"></div>
-                           <div className="absolute -top-4 left-4 w-16 h-2 bg-red-500 rounded-t-full"></div>
-                        </>
-                    )}
-                </div>
-
-                {/* Cuerpo */}
-                <div className="w-32 h-24 bg-blue-600 rounded-t-[2rem] relative -mt-2 shadow-inner flex justify-center z-10">
-                    {/* Logo Camiseta */}
-                    <div className="mt-8 text-white/30 font-black text-xs tracking-widest">HODL</div>
-                    
-                    {/* Brazos Tecleando */}
-                    <div className="absolute bottom-2 -left-8 w-12 h-24 bg-blue-700 rounded-full origin-top rotate-[20deg] animate-[type-left_0.2s_infinite]"></div>
-                    <div className="absolute bottom-2 -right-8 w-12 h-24 bg-blue-700 rounded-full origin-top rotate-[-20deg] animate-[type-right_0.2s_infinite_reverse]"></div>
-                </div>
+            {/* --- SUELO (BASE) --- */}
+            <div 
+                className="absolute shadow-2xl transition-all duration-1000"
+                style={{ 
+                    width: `${roomSize}px`, 
+                    height: `${roomSize}px`, 
+                    backgroundColor: floorColor,
+                    backgroundImage: floorPattern === 'checkerboard' ? 
+                        'linear-gradient(45deg, #1e3a8a 25%, transparent 25%, transparent 75%, #1e3a8a 75%, #1e3a8a), linear-gradient(45deg, #1e3a8a 25%, transparent 25%, transparent 75%, #1e3a8a 75%, #1e3a8a)' : floorPattern,
+                    backgroundSize: '40px 40px',
+                    backgroundPosition: '0 0, 20px 20px',
+                    left: '50%', top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    boxShadow: '-20px 20px 50px rgba(0,0,0,0.5)'
+                }}
+            >
+                {/* Alfombra (Si nivel > 5) */}
+                {level >= 5 && (
+                    <div className="absolute top-[20%] left-[20%] w-[60%] h-[60%] bg-red-900/50 rounded-lg border-2 border-red-800/50"></div>
+                )}
             </div>
 
-            {/* ESCRITORIO */}
-            <div className="relative z-20 perspective-[1000px]">
+            {/* --- PAREDES (Levantadas en 3D) --- */}
+            {/* Pared Izquierda (Oeste) */}
+            <div 
+                className="absolute origin-bottom-left transition-all duration-1000"
+                style={{
+                    width: '20px',
+                    height: `${roomSize}px`,
+                    backgroundColor: wallColor,
+                    filter: 'brightness(0.8)',
+                    transform: 'rotateY(-90deg)',
+                    left: `calc(50% - ${roomSize/2}px)`,
+                    top: `calc(50% - ${roomSize/2}px)`
+                }}
+            >
+                {/* Ventana en Pared Izquierda (Nivel alto) */}
+                {level >= 10 && (
+                    <div className="absolute top-10 left-0 w-full h-[60%] bg-cyan-300/20 border-y-4 border-slate-800 shadow-[0_0_20px_rgba(34,211,238,0.2)]"></div>
+                )}
+            </div>
+
+            {/* Pared Trasera (Norte) */}
+            <div 
+                className="absolute origin-top-left transition-all duration-1000"
+                style={{
+                    width: `${roomSize}px`,
+                    height: '100px', // Altura de pared
+                    backgroundColor: wallColor,
+                    filter: 'brightness(0.6)',
+                    transform: 'rotateX(-90deg)',
+                    left: `calc(50% - ${roomSize/2}px)`,
+                    top: `calc(50% - ${roomSize/2}px)`
+                }}
+            >
+                {/* Pizarra / Cuadro */}
+                <div className="absolute top-[20%] left-[30%] w-[40%] h-[50%] bg-green-900 border-4 border-yellow-900 opacity-80"></div>
+            </div>
+
+
+            {/* --- MUEBLES Y OBJETOS (Z-Index fake con translateZ) --- */}
+            
+            {/* 1. ESCRITORIO (El centro de mando) */}
+            <div className="absolute" style={{ 
+                left: '50%', top: '50%', 
+                transform: 'translate(-50%, -50%) translateZ(20px)' 
+            }}>
                 {/* Tablero Mesa */}
-                <div className={`w-[600px] h-20 rounded-xl shadow-2xl relative flex justify-center items-end pb-4
-                    ${tier >= 4 ? 'bg-slate-200' : 'bg-slate-800'} 
-                    ${tier === 2 ? 'bg-zinc-700 border-t-4 border-zinc-600' : ''}
-                `}>
-                     {/* Brillo del monitor en la mesa */}
-                     <div className="absolute top-0 w-64 h-16 bg-blue-500/20 blur-xl rounded-full"></div>
-
-                     {/* SETUP: MONITORES */}
-                     <div className="absolute bottom-10 flex items-end gap-2">
-                         
-                         {/* Monitor Izq (Si Setup Pro) */}
-                         {items.includes('setup_pro') && (
-                             <div className="w-32 h-40 bg-slate-900 rounded-lg border-4 border-slate-700 relative overflow-hidden shadow-lg origin-bottom-right -rotate-y-12 transform skew-y-3">
-                                 <div className="absolute inset-0 bg-green-900/20 flex flex-col p-2 gap-1">
-                                     <div className="w-full h-1 bg-green-500/50 animate-pulse"></div>
-                                     <div className="w-2/3 h-1 bg-green-500/50 animate-pulse delay-75"></div>
-                                     <div className="w-full h-1 bg-green-500/50 animate-pulse delay-150"></div>
-                                 </div>
-                             </div>
-                         )}
-
-                         {/* Monitor Principal */}
-                         <div className="w-64 h-40 bg-slate-900 rounded-xl border-[6px] border-slate-700 relative overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-[monitor-glow_3s_infinite]">
-                             {/* Pantalla Contenido */}
-                             <div className="absolute inset-0 bg-slate-900 flex items-end px-2 gap-1 opacity-80">
-                                 <div className="w-1/6 h-[40%] bg-red-500 animate-[pulse_1s_infinite]"></div>
-                                 <div className="w-1/6 h-[70%] bg-green-500 animate-[pulse_1.2s_infinite]"></div>
-                                 <div className="w-1/6 h-[30%] bg-red-500 animate-[pulse_0.8s_infinite]"></div>
-                                 <div className="w-1/6 h-[90%] bg-green-500 animate-[pulse_1.5s_infinite]"></div>
-                                 <div className="w-1/6 h-[50%] bg-green-500 animate-[pulse_1s_infinite]"></div>
-                                 <div className="w-1/6 h-[60%] bg-red-500 animate-[pulse_1.1s_infinite]"></div>
-                             </div>
-                             {/* Reflejo */}
-                             <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/5 to-transparent pointer-events-none"></div>
-                         </div>
-
-                         {/* Monitor Der (Si Setup Pro) */}
-                         {items.includes('setup_pro') && (
-                             <div className="w-32 h-40 bg-slate-900 rounded-lg border-4 border-slate-700 relative overflow-hidden shadow-lg origin-bottom-left rotate-y-12 transform -skew-y-3">
-                                 <div className="absolute inset-0 flex items-center justify-center">
-                                     <div className="w-16 h-16 border-4 border-blue-500 rounded-full animate-spin border-t-transparent"></div>
-                                 </div>
-                             </div>
-                         )}
-                     </div>
-
-                     {/* Periféricos */}
-                     <div className="w-40 h-2 bg-slate-900/50 rounded-full mb-1 relative">
-                        {/* Teclado RGB */}
-                        <div className="absolute -top-2 left-2 w-24 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 blur-[1px] opacity-80 animate-pulse"></div>
-                     </div>
-                     <div className="w-6 h-8 bg-slate-900 rounded-full absolute bottom-6 right-32 border border-slate-700"></div> {/* Ratón */}
-                </div>
-
-                {/* Patas Mesa */}
-                <div className="w-full flex justify-between px-10 -mt-2">
-                    <div className="w-4 h-32 bg-gradient-to-b from-slate-700 to-slate-900"></div>
-                    <div className="w-4 h-32 bg-gradient-to-b from-slate-700 to-slate-900"></div>
+                <div className="w-32 h-16 bg-amber-800 shadow-lg relative">
+                    {/* Ordenador */}
+                    <div className="absolute right-2 bottom-4 w-8 h-8 bg-slate-800 border-t-2 border-l-2 border-slate-600 shadow-md"></div>
+                    {/* Monitor (Levantado) */}
+                    <div className="absolute left-8 bottom-8 w-16 h-2 bg-black transform rotate-x-[-90deg] translate-y-[-20px] shadow-[0_0_10px_rgba(0,255,0,0.5)]"></div>
+                    
+                    {/* Silla */}
+                    <div className="absolute -bottom-8 left-10 w-12 h-12 bg-slate-700 rounded-full border-4 border-slate-900"></div>
+                    
+                    {/* PERSONAJE (Meeple) */}
+                    <div className="absolute -bottom-4 left-12 w-8 h-8 bg-blue-500 rounded-full border-2 border-white shadow-xl z-50 animate-bounce"></div>
                 </div>
             </div>
 
-            {/* Silla (Detrás de la mesa, pero visualmente conectada) */}
-            <div className="absolute bottom-0 z-0">
-                 <div className="w-40 h-48 bg-slate-800 rounded-t-full border-4 border-slate-700 shadow-xl"></div>
-            </div>
-        </div>
+            {/* 2. SERVIDORES (Si tienes setup pro) */}
+            {items.includes('setup_pro') && (
+                <div className="absolute" style={{ 
+                    left: '20%', top: '20%', 
+                    transform: 'translateZ(0px)' 
+                }}>
+                    <div className="w-16 h-16 bg-black border-2 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] relative">
+                        <div className="absolute top-2 left-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <div className="absolute top-6 left-2 w-2 h-2 bg-red-500 rounded-full animate-pulse delay-75"></div>
+                    </div>
+                </div>
+            )}
 
-        {/* 4. OBJETOS DE TIENDA (Decoración Frontal) */}
-        <div className="absolute inset-0 pointer-events-none z-40">
+            {/* 3. PLANTA (Si comprada) */}
             {items.includes('plant') && (
-               <div className="absolute bottom-0 left-4 md:left-20 w-32 h-48 transition-transform hover:scale-105">
-                  {/* Maceta */}
-                  <div className="absolute bottom-0 left-8 w-16 h-16 bg-orange-800 rounded-b-lg shadow-lg"></div>
-                  {/* Hojas (Arte CSS simple) */}
-                  <div className="absolute bottom-16 left-12 w-8 h-24 bg-green-700 rounded-full -rotate-12 origin-bottom"></div>
-                  <div className="absolute bottom-16 left-12 w-8 h-20 bg-green-600 rounded-full rotate-12 origin-bottom"></div>
-                  <div className="absolute bottom-16 left-12 w-8 h-16 bg-green-500 rounded-full rotate-0 origin-bottom"></div>
-               </div>
-            )}
-
-            {items.includes('cat') && (
-               <div className="absolute bottom-4 right-4 md:right-32 text-6xl drop-shadow-2xl animate-bounce">
-                  🐈
-               </div>
-            )}
-            
-            {items.includes('trophy_gold') && (
-                <div className="absolute top-32 left-10 bg-white/5 p-2 rounded-xl backdrop-blur-md border border-white/10 animate-[float-space_4s_ease-in-out_infinite]">
-                    <div className="text-5xl filter drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">🏆</div>
+                <div className="absolute" style={{ left: '80%', top: '20%' }}>
+                    <div className="w-12 h-12 bg-green-800 rounded-full relative">
+                        <div className="absolute -top-8 left-4 w-4 h-12 bg-green-500 rounded-full"></div>
+                        <div className="absolute -top-6 left-0 w-4 h-10 bg-green-600 rounded-full rotate-[-45deg]"></div>
+                        <div className="absolute -top-6 right-0 w-4 h-10 bg-green-600 rounded-full rotate-[45deg]"></div>
+                    </div>
                 </div>
             )}
+
+            {/* 4. TROFEO (Si comprado) */}
+            {items.includes('trophy_gold') && (
+                <div className="absolute" style={{ left: '80%', top: '80%' }}>
+                     <div className="w-10 h-10 bg-yellow-500 rounded-full shadow-[0_0_20px_gold] animate-pulse"></div>
+                </div>
+            )}
+
         </div>
 
-        {/* Overlay Viñeta */}
-        <div className="absolute inset-0 bg-[radial-gradient(transparent_50%,#000_100%)] z-50 pointer-events-none opacity-60"></div>
+        {/* HUD / Overlay (No isométrico) */}
+        <div className="absolute top-4 left-4 z-50 pointer-events-none">
+             <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700 shadow-xl">
+                 <h3 className="text-white font-black text-lg uppercase tracking-widest">Vista Aérea</h3>
+                 <p className="text-slate-400 text-xs">Cámara de seguridad #01</p>
+             </div>
+        </div>
 
     </div>
   );

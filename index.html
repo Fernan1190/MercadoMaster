@@ -145,6 +145,41 @@
       transform-style: preserve-3d;
       }
 
+      /* --- MOTOR ISOMÉTRICO --- */
+
+      /* Contenedor Isométrico Base */
+      .iso-scene {
+      transform: rotateX(60deg) rotateZ(-45deg) translateZ(-100px);
+      transform-style: preserve-3d;
+      }
+
+      /* Cubo Genérico */
+      .iso-cube {
+      transform-style: preserve-3d;
+      position: absolute;
+      }
+      .iso-face {
+      position: absolute;
+      backface-visibility: hidden;
+      }
+      .face-top { transform: rotateZ(45deg); }
+      .face-left { transform: rotateX(-90deg) rotateY(-45deg) translateY(50%); transform-origin: bottom; filter: brightness(0.8); }
+      .face-right { transform: rotateX(-90deg) rotateY(45deg) translateY(50%); transform-origin: bottom; filter: brightness(0.6); }
+
+      /* Animaciones */
+      @keyframes float-iso {
+      0%, 100% { transform: translateZ(20px); }
+      50% { transform: translateZ(30px); }
+      }
+      @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.2); }
+      50% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.6); }
+      }
+      @keyframes hologram-spin {
+      from { transform: rotateZ(0deg); }
+      to { transform: rotateZ(360deg); }
+      }
+
       .animate-type-left { animation: type-left 0.2s infinite; }
       .animate-type-right { animation: type-right 0.2s infinite reverse; }
       .animate-head-bob { animation: head-bob 2s infinite ease-in-out; }
