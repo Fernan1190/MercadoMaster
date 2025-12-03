@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react';
-import { UserStats, PathId, DailyQuest, Transaction, Achievement, CandleData } from '../types';
+import { UserStats, PathId, DailyQuest, Transaction, Achievement, CandleData, QuizQuestion } from '../types';
 import { INITIAL_PRICES, generateNextCandle } from '../services/marketSimulator';
 import { ACHIEVEMENTS } from '../data/achievements';
 
@@ -23,7 +23,6 @@ const INITIAL_STATS: UserStats = {
   masterCoins: 350, 
   completedLessons: [],
   levelRatings: {},
-  lessonNotes: {}, // <--- Inicializado
   pathProgress: { [PathId.STOCKS]: 0, [PathId.CRYPTO]: 0 },
   inventory: { hint5050: 3, timeFreeze: 2, skip: 1, streakFreeze: 1, doubleXp: 0 },
   bookmarks: [],
@@ -34,7 +33,12 @@ const INITIAL_STATS: UserStats = {
   stakedCoins: 0,
   minedCoins: 0,
   quickNotes: "",
-  openedChests: []
+  openedChests: [],
+  // Init nuevos campos
+  lessonNotes: {},
+  questionsAnswered: 0,
+  correctAnswers: 0,
+  mistakes: []
 };
 
 type SoundType = 'success' | 'error' | 'cash' | 'pop' | 'levelUp' | 'click' | 'chest';
@@ -52,11 +56,12 @@ interface GameContextType {
   market: MarketState;
   actions: {
     updateStats: (xpGained: number, pathId?: PathId, levelIncrement?: number, perfectRun?: boolean) => void;
+    recordAnswer: (isCorrect: boolean, question: QuizQuestion) => void; // NUEVO
+    saveLessonNote: (lessonId: string, note: string) => void; // NUEVO
     deductHeart: () => void;
     buyHearts: () => boolean;
     useItem: (type: 'hint5050' | 'timeFreeze' | 'skip') => boolean;
     addBookmark: (term: string) => void;
-    saveLessonNote: (lessonId: string, note: string) => void; // <--- NUEVA ACCIÓN
     mineCoin: () => void;
     stakeCoins: () => void;
     unstakeCoins: () => void;
@@ -85,7 +90,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         if (!parsed.transactions) parsed.transactions = [];
         if (!parsed.unlockedAchievements) parsed.unlockedAchievements = [];
         if (!parsed.unlockedThemes) parsed.unlockedThemes = ['default'];
-        if (!parsed.lessonNotes) parsed.lessonNotes = {}; // Migración segura
+        if (!parsed.lessonNotes) parsed.lessonNotes = {};
+        if (parsed.questionsAnswered === undefined) parsed.questionsAnswered = 0;
+        if (parsed.correctAnswers === undefined) parsed.correctAnswers = 0;
+        if (!parsed.mistakes) parsed.mistakes = [];
         return parsed;
       } catch (e) { return INITIAL_STATS; }
     }
@@ -101,6 +109,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [latestAchievement, setLatestAchievement] = useState<Achievement | null>(null);
   const prevAchievementsCount = useRef(stats.unlockedAchievements.length);
 
+  // ... (Inicialización y Bucle de Mercado IGUAL que antes) ...
   useEffect(() => {
     const initialHistory: any = {};
     const initialTrend: any = {};
@@ -194,11 +203,39 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
+  // --- ACCIÓN NUEVA: REGISTRO DE RESPUESTAS Y ERRORES ---
+  const recordAnswer = useCallback((isCorrect: boolean, question: QuizQuestion) => {
+    setStats(prev => {
+        const next = { ...prev };
+        next.questionsAnswered = (prev.questionsAnswered || 0) + 1;
+        
+        if (isCorrect) {
+            next.correctAnswers = (prev.correctAnswers || 0) + 1;
+        } else {
+            // Añadimos a la Bóveda de Errores (evitando duplicados exactos)
+            const alreadyExists = prev.mistakes?.some(m => m.question === question.question);
+            if (!alreadyExists) {
+                next.mistakes = [...(prev.mistakes || []), question];
+            }
+        }
+        const changes = calculateAchievements(next);
+        return { ...next, ...changes };
+    });
+  }, []);
+
+  // --- ACCIÓN NUEVA: GUARDAR NOTA ---
+  const saveLessonNote = useCallback((lessonId: string, note: string) => {
+      setStats(prev => ({ ...prev, lessonNotes: { ...prev.lessonNotes, [lessonId]: note } }));
+  }, []);
+
   const updateStats = useCallback((xpGained: number, pathId?: PathId, levelIncrement: number = 0, perfectRun: boolean = false) => {
     setStats(prev => {
       let next = { ...prev };
-      const newPathProgress = { ...next.pathProgress };
-      if (pathId) newPathProgress[pathId] = (newPathProgress[pathId] || 0) + levelIncrement;
+      if (pathId) {
+          const newPathProgress = { ...next.pathProgress };
+          newPathProgress[pathId] = (newPathProgress[pathId] || 0) + levelIncrement;
+          next.pathProgress = newPathProgress;
+      }
       const coinsGained = Math.floor(xpGained / 2);
       const newQuests = next.dailyQuests.map(q => {
         if (q.completed) return q;
@@ -208,97 +245,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         if (q.type === 'perfect' && perfectRun) newProgress += 1;
         return { ...q, progress: newProgress, completed: newProgress >= q.target };
       });
-      next = { ...next, xp: next.xp + xpGained, masterCoins: next.masterCoins + coinsGained, pathProgress: newPathProgress, dailyQuests: newQuests };
+      next = { ...next, xp: next.xp + xpGained, masterCoins: next.masterCoins + coinsGained, dailyQuests: newQuests };
       const newLevel = Math.floor(next.xp / 500) + 1;
       if (newLevel > next.level) next.level = newLevel;
       return { ...next, ...calculateAchievements(next) };
     });
   }, []);
 
-  const mineCoin = useCallback(() => { 
-    playSound('pop'); 
-    setStats(prev => {
-        const next = { ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 };
-        return { ...next, ...calculateAchievements(next) };
-    }); 
-  }, [playSound]);
-
-  const buyAsset = useCallback((symbol: string, amount: number, currentPrice: number) => {
-    const totalCost = amount * currentPrice;
-    if (stats.balance >= totalCost) {
-      const newTx: Transaction = { id: Date.now().toString(), type: 'buy', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() };
-      setStats(prev => {
-        if (prev.balance < totalCost) return prev;
-        const next = { ...prev, balance: prev.balance - totalCost, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) + amount }, transactions: [newTx, ...(prev.transactions || [])] };
-        return { ...next, ...calculateAchievements(next) };
-      });
-      return true; 
-    }
-    return false; 
-  }, [stats.balance]);
-
-  const sellAsset = useCallback((symbol: string, amount: number, currentPrice: number) => {
-    const currentQty = stats.portfolio[symbol] || 0;
-    if (currentQty >= amount) {
-      const totalGain = amount * currentPrice;
-      const newTx: Transaction = { id: Date.now().toString(), type: 'sell', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() };
-      setStats(prev => {
-        if ((prev.portfolio[symbol] || 0) < amount) return prev;
-        const next = { ...prev, balance: prev.balance + totalGain, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) - amount }, transactions: [newTx, ...(prev.transactions || [])] };
-        return { ...next, ...calculateAchievements(next) };
-      });
-      return true;
-    }
-    return false;
-  }, [stats.portfolio]);
-
-  const buyShopItem = useCallback((itemId: keyof UserStats['inventory'], cost: number) => {
-     if (stats.masterCoins >= cost) {
-         playSound('cash');
-         setStats(prev => {
-             const next = { 
-                 ...prev, 
-                 masterCoins: prev.masterCoins - cost,
-                 inventory: { ...prev.inventory, [itemId]: prev.inventory[itemId] + 1 }
-             };
-             return next;
-         });
-         return true;
-     }
-     playSound('error');
-     return false;
-  }, [stats.masterCoins, playSound]);
-
-  const buyTheme = useCallback((themeId: string, cost: number) => {
-      if (stats.masterCoins >= cost && !stats.unlockedThemes.includes(themeId)) {
-          playSound('cash');
-          setStats(prev => ({
-              ...prev,
-              masterCoins: prev.masterCoins - cost,
-              unlockedThemes: [...prev.unlockedThemes, themeId],
-              theme: themeId as any 
-          }));
-          return true;
-      }
-      playSound('error');
-      return false;
-  }, [stats.masterCoins, stats.unlockedThemes, playSound]);
-
-  const equipTheme = useCallback((themeId: any) => {
-      if (stats.unlockedThemes.includes(themeId)) {
-          playSound('click');
-          setStats(prev => ({ ...prev, theme: themeId }));
-      }
-  }, [stats.unlockedThemes, playSound]);
-
-  // NUEVO: Guardar Notas de Lección
-  const saveLessonNote = useCallback((lessonId: string, note: string) => {
-      setStats(prev => ({
-          ...prev,
-          lessonNotes: { ...prev.lessonNotes, [lessonId]: note }
-      }));
-  }, []);
-
+  // ... (mineCoin, buyAsset, etc. sin cambios, solo el return value de useMemo)
+  const mineCoin = useCallback(() => { playSound('pop'); setStats(prev => { const next = { ...prev, masterCoins: prev.masterCoins + 1, minedCoins: (prev.minedCoins || 0) + 1 }; return { ...next, ...calculateAchievements(next) }; }); }, [playSound]);
+  const buyAsset = useCallback((symbol: string, amount: number, currentPrice: number) => { const totalCost = amount * currentPrice; if (stats.balance >= totalCost) { const newTx: Transaction = { id: Date.now().toString(), type: 'buy', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() }; setStats(prev => { if (prev.balance < totalCost) return prev; const next = { ...prev, balance: prev.balance - totalCost, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) + amount }, transactions: [newTx, ...(prev.transactions || [])] }; return { ...next, ...calculateAchievements(next) }; }); return true; } return false; }, [stats.balance]);
+  const sellAsset = useCallback((symbol: string, amount: number, currentPrice: number) => { const currentQty = stats.portfolio[symbol] || 0; if (currentQty >= amount) { const totalGain = amount * currentPrice; const newTx: Transaction = { id: Date.now().toString(), type: 'sell', symbol, amount, price: currentPrice, timestamp: new Date().toLocaleString() }; setStats(prev => { if ((prev.portfolio[symbol] || 0) < amount) return prev; const next = { ...prev, balance: prev.balance + totalGain, portfolio: { ...prev.portfolio, [symbol]: (prev.portfolio[symbol] || 0) - amount }, transactions: [newTx, ...(prev.transactions || [])] }; return { ...next, ...calculateAchievements(next) }; }); return true; } return false; }, [stats.portfolio]);
   const deductHeart = useCallback(() => { playSound('error'); setStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) })); }, [playSound]);
   const buyHearts = useCallback(() => { if (stats.masterCoins >= 300) { setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - 300, hearts: prev.maxHearts })); playSound('cash'); return true; } playSound('error'); return false; }, [stats.masterCoins, playSound]);
   const useItem = useCallback((type: 'hint5050' | 'timeFreeze' | 'skip') => { return true; }, []);
@@ -310,11 +267,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const updateNotes = useCallback((notes: string) => setStats(prev => ({ ...prev, quickNotes: notes })), []);
   const getThemeClass = useCallback(() => { if (stats.theme === 'cyberpunk') return 'bg-slate-950 font-mono text-cyan-400 selection:bg-pink-500'; if (stats.theme === 'terminal') return 'bg-black font-mono text-green-500 selection:bg-green-700'; return 'bg-slate-950 text-slate-100 font-sans selection:bg-green-500 selection:text-slate-900'; }, [stats.theme]);
   const clearAchievement = useCallback(() => setLatestAchievement(null), []);
+  const buyShopItem = useCallback((itemId: keyof UserStats['inventory'], cost: number) => { if (stats.masterCoins >= cost) { playSound('cash'); setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - cost, inventory: { ...prev.inventory, [itemId]: prev.inventory[itemId] + 1 } })); return true; } playSound('error'); return false; }, [stats.masterCoins, playSound]);
+  const buyTheme = useCallback((themeId: string, cost: number) => { if (stats.masterCoins >= cost && !stats.unlockedThemes.includes(themeId)) { playSound('cash'); setStats(prev => ({ ...prev, masterCoins: prev.masterCoins - cost, unlockedThemes: [...prev.unlockedThemes, themeId], theme: themeId as any })); return true; } playSound('error'); return false; }, [stats.masterCoins, stats.unlockedThemes, playSound]);
+  const equipTheme = useCallback((themeId: any) => { if (stats.unlockedThemes.includes(themeId)) { playSound('click'); setStats(prev => ({ ...prev, theme: themeId })); } }, [stats.unlockedThemes, playSound]);
 
   const contextValue = useMemo(() => ({
     stats, latestAchievement, clearAchievement, market: marketState,
-    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote }
-  }), [stats, marketState, latestAchievement, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote]);
+    actions: { updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer }
+  }), [stats, marketState, latestAchievement, updateStats, mineCoin, buyAsset, sellAsset, deductHeart, buyHearts, useItem, addBookmark, stakeCoins, unstakeCoins, openChest, toggleTheme, updateNotes, getThemeClass, playSound, buyShopItem, buyTheme, equipTheme, saveLessonNote, recordAnswer]);
 
   return (
     <GameContext.Provider value={contextValue}>

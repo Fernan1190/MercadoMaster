@@ -13,12 +13,14 @@ export interface UserStats {
   completedLessons: string[];
   levelRatings: { [lessonId: string]: 1 | 2 | 3 };
   
-  // --- NUEVO: NOTAS POR LECCIÓN ---
-  lessonNotes: { [lessonId: string]: string }; 
-  
-  pathProgress: {
-    [key in PathId]?: number;
-  };
+  // --- NUEVO: MAESTRÍA Y ESTUDIO ---
+  lessonNotes: { [lessonId: string]: string }; // Tus notas personales
+  questionsAnswered: number; // Total respondidas
+  correctAnswers: number;    // Total aciertos
+  mistakes: QuizQuestion[];  // Bóveda de errores
+  // ---------------------------------
+
+  pathProgress: { [key in PathId]?: number };
   inventory: {
     hint5050: number;
     timeFreeze: number;
@@ -36,7 +38,16 @@ export interface UserStats {
   prestige: number;
   stakedCoins: number;
   minedCoins: number;
-  quickNotes: string; // Notas globales (Dashboard)
+  quickNotes: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'buy' | 'sell';
+  symbol: string;
+  amount: number;
+  price: number;
+  timestamp: string;
 }
 
 export enum PathId {
@@ -62,7 +73,7 @@ export interface LearningPath {
   units: Unit[];
 }
 
-// --- AÑADIDO 'cloze' ---
+// AÑADIDO 'cloze'
 export type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'binary_prediction' | 'candle_chart' | 'word_construction' | 'risk_slider' | 'portfolio_balancing' | 'sentiment_swipe' | 'chart_point' | 'cloze';
 
 export interface QuizQuestion {
@@ -72,27 +83,23 @@ export interface QuizQuestion {
   pedagogicalGoal?: string;
   bloomLevel?: 'remember' | 'understand' | 'apply' | 'analyze';
   scenarioContext?: string;
-
-  options?: string[]; 
+  options?: string[];
   correctIndex?: number;
   correctAnswerText?: string;
-  pairs?: { left: string; right: string }[]; 
-  correctOrder?: string[]; 
-  chartData?: { trend: 'up' | 'down' | 'volatile' | 'doji_reversal'; indicatorHint?: string; }; 
-  sentenceParts?: string[]; 
+  pairs?: { left: string; right: string }[];
+  correctOrder?: string[];
+  chartData?: { trend: 'up' | 'down' | 'volatile' | 'doji_reversal'; indicatorHint?: string; };
+  sentenceParts?: string[];
   riskScenario?: { correctValue: number; tolerance: number; minLabel: string; maxLabel: string };
-  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[]; 
-  portfolioTargetRisk?: number; 
+  portfolioAssets?: { name: string; type: 'stock' | 'bond' | 'crypto'; riskScore: number }[];
+  portfolioTargetRisk?: number;
   sentimentCards?: { text: string; sentiment: 'bullish' | 'bearish' }[];
   chartPointConfig?: { entryPrice: number; trend: 'up' | 'down'; idealStopLoss: number };
-
-  // --- NUEVO PARA CLOZE ---
-  // Ejemplo: "El {0} mide la rentabilidad."
-  clozeText?: string; 
-  // Opciones para rellenar: ["PER", "RSI"]
+  
+  // NUEVO PARA CLOZE
+  clozeText?: string; // "El {0} mide la rentabilidad"
   clozeOptions?: string[]; 
-  // Respuesta correcta: "PER"
-  correctClozeAnswer?: string; 
+  correctClozeAnswer?: string;
 
   explanation: string;
   relatedSlideIndex?: number;
@@ -106,11 +113,7 @@ export interface TheorySlide {
   realWorldExample?: string;
   icon: string;
   visualType?: 'chart_line' | 'chart_candle' | 'chart_volume' | 'diagram_flow' | 'none';
-  visualMeta?: {
-    trend?: 'up' | 'down' | 'volatile' | 'flat';
-    showIndicators?: boolean;
-    label?: string;
-  };
+  visualMeta?: { trend?: 'up' | 'down' | 'volatile' | 'flat'; showIndicators?: boolean; label?: string; };
   keyTerms?: string[];
   deepDive?: { title: string; content: string };
   commonPitfall?: string;
@@ -127,85 +130,15 @@ export interface LessonContent {
   generatedBy?: 'ai' | 'fallback' | 'static';
 }
 
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
-}
-
-export interface MarketData {
-  time: string;
-  price: number;
-}
-
-export interface OHLCData {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  iconName: string;
-  condition: (stats: UserStats) => boolean;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  username: string;
-  xp: number;
-  avatar: string;
-  isCurrentUser?: boolean;
-  league: string;
-}
-
-export interface DailyQuest {
-  id: string;
-  text: string;
-  target: number;
-  progress: number;
-  completed: boolean;
-  reward: number;
-  type: 'xp' | 'lessons' | 'perfect';
-}
-
-export interface Order {
-  id: string;
-  type: 'buy' | 'sell';
-  price: number;
-  amount: number;
-  timestamp: number;
-  asset: string;
-  leverage: number;
-  pl?: number;
-  commission?: number;
-}
-
+export interface ChatMessage { role: 'user' | 'model'; text: string; }
+export interface MarketData { time: string; price: number; }
+export interface OHLCData { time: number; open: number; high: number; low: number; close: number; volume: number; }
+export interface Achievement { id: string; title: string; description: string; iconName: string; condition: (stats: UserStats) => boolean; }
+export interface LeaderboardEntry { rank: number; username: string; xp: number; avatar: string; isCurrentUser?: boolean; league: string; }
+export interface DailyQuest { id: string; text: string; target: number; progress: number; completed: boolean; reward: number; type: 'xp' | 'lessons' | 'perfect'; }
+export interface Order { id: string; type: 'buy' | 'sell'; price: number; amount: number; timestamp: number; asset: string; leverage: number; pl?: number; commission?: number; }
 export type GameMode = 'standard' | 'survival' | 'time_trial';
 export type AIPersona = 'standard' | 'warren' | 'wolf' | 'socrates';
-
-export interface SimSettings {
-   leverage: number;
-   showRSI: boolean;
-   showSMA: boolean;
-}
-
-export interface Asset {
-  symbol: string;
-  name: string;
-  price: number;
-  change24h: number;
-  type: 'crypto' | 'stock';
-}
-
-export interface CandleData {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-}
+export interface SimSettings { leverage: number; showRSI: boolean; showSMA: boolean; }
+export interface Asset { symbol: string; name: string; price: number; change24h: number; type: 'crypto' | 'stock'; }
+export interface CandleData { time: string; open: number; high: number; low: number; close: number; }

@@ -3,7 +3,8 @@ import { Sidebar } from './components/Sidebar';
 import { Learn } from './components/Learn';
 import { Dashboard } from './components/Dashboard';
 import { Shop } from './components/Shop'; 
-import { Leaderboard } from './components/Leaderboard'; // <--- IMPORTAR
+import { Leaderboard } from './components/Leaderboard';
+import { Profile } from './components/Profile'; // <--- IMPORTAR
 import { AchievementPopup } from './components/AchievementPopup';
 import { GameProvider, useGame } from './context/GameContext'; 
 
@@ -35,7 +36,8 @@ const AppContent = () => {
         {view === 'dashboard' && <Dashboard setView={setView} />}
         {view === 'learn' && <Learn />}
         {view === 'shop' && <Shop />}
-        {view === 'leaderboard' && <Leaderboard />} {/* <--- RUTA NUEVA */}
+        {view === 'leaderboard' && <Leaderboard />}
+        {view === 'profile' && <Profile />} {/* <--- RUTA NUEVA */}
       </main>
     </div>
   );

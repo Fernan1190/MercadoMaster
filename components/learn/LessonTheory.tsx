@@ -3,7 +3,7 @@ import { LessonContent } from '../../types';
 import { Volume1, BookMarked, Wand2, BrainCircuit, ChevronUp, ChevronDown, AlertTriangle, Lightbulb, ArrowRight, Gem, Bot, Edit3, Save } from 'lucide-react';
 import { EducationalChart } from './EducationalChart';
 import { GLOSSARY } from '../../data/glossary';
-import { useGame } from '../../context/GameContext'; // Importar contexto para guardar notas
+import { useGame } from '../../context/GameContext'; 
 
 interface LessonTheoryProps {
   activeLesson: LessonContent;
@@ -17,6 +17,7 @@ interface LessonTheoryProps {
   onSimplify: () => void;
 }
 
+// Componente interno para texto con tooltips
 const RichText = ({ content, onHoverTerm }: { content: string, onHoverTerm: (term: string | null, definition: string | null) => void }) => {
   const cleanContent = content.replace(/<\/?(span|div|p|script|iframe)[^>]*>/gi, "");
   const parts = cleanContent.split(/(\*\*.*?\*\*)/g);
@@ -66,7 +67,7 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
   const [checkpointAnswered, setCheckpointAnswered] = useState<boolean | null>(null);
   const [canContinueSlide, setCanContinueSlide] = useState(false);
   
-  // Estado para las notas
+  // Estado para notas
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
 
@@ -78,7 +79,7 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
      return () => clearTimeout(timer);
   }, [currentSlideIndex]);
 
-  // Cargar nota guardada si existe
+  // Cargar nota guardada
   useEffect(() => {
     if (activeLesson.id && stats.lessonNotes[activeLesson.id]) {
         setNote(stats.lessonNotes[activeLesson.id]);
@@ -88,7 +89,7 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
   const handleSaveNote = () => {
       if (activeLesson.id) {
           actions.saveLessonNote(activeLesson.id, note);
-          actions.playSound('success'); // Feedback sonoro
+          actions.playSound('success');
       }
   };
 
@@ -131,6 +132,7 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
                 )}
 
                 <div className="prose prose-invert prose-xl leading-loose text-slate-300 relative">
+                   {/* GLOSARIO FLOTANTE */}
                    {activeTerm && (
                       <div className="absolute -top-24 left-0 w-full z-50 pointer-events-none animate-slide-up">
                           <div className="bg-slate-800 border-l-4 border-yellow-400 text-white p-4 rounded-r-lg shadow-2xl flex flex-col items-start gap-1">
@@ -151,7 +153,6 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
                 </div>
              </div>
 
-             {/* Sección de Componentes Pedagógicos */}
              <div className="w-full grid gap-4 mt-6">
                  {slide.deepDive && (
                     <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
@@ -168,10 +169,8 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
                     </div>
                  )}
 
-                 {/* ... (Resto de componentes: Pitfall, Analogy...) */}
-                 
-                 {/* NUEVO: CUADERNO DE ESTUDIO */}
-                 <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden mt-4">
+                 {/* CUADERNO DE NOTAS (NUEVO) */}
+                 <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
                      <button onClick={() => setShowNote(!showNote)} className="w-full p-4 flex justify-between items-center hover:bg-slate-800 transition-colors">
                         <span className="font-bold text-emerald-400 flex items-center gap-2"><Edit3 size={20}/> Mis Notas</span>
                         {showNote ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
@@ -190,6 +189,21 @@ export const LessonTheory: React.FC<LessonTheoryProps> = ({
                         </div>
                      )}
                  </div>
+
+                 {slide.checkpointQuestion && checkpointAnswered === null && (
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mt-4 text-center animate-slide-up">
+                       <p className="font-bold text-white mb-4">{slide.checkpointQuestion?.question}</p>
+                       <div className="flex gap-4 justify-center">
+                          <button onClick={() => setCheckpointAnswered(true === slide.checkpointQuestion?.answer)} className="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold">Verdadero / Sí</button>
+                          <button onClick={() => setCheckpointAnswered(false === slide.checkpointQuestion?.answer)} className="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold">Falso / No</button>
+                       </div>
+                    </div>
+                 )}
+                 {checkpointAnswered !== null && (
+                    <div className={`p-4 rounded-xl text-center font-bold ${checkpointAnswered ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                       {checkpointAnswered ? "¡Correcto! Entendiste el concepto." : "Ups, revisa de nuevo la explicación."}
+                    </div>
+                 )}
              </div>
              
              <button 
